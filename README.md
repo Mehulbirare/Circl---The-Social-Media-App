@@ -1,97 +1,217 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Circl
 
-# Getting Started
+**Your circle, your city.**
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+A location-based community app built with React Native. Discover what's happening nearby, connect with people in your neighbourhood, and share local posts and events in real time.
 
-## Step 1: Start Metro
+---
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+## Screenshots
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+| Welcome | Home | Profile |
+|---------|------|---------|
+| ![Welcome](./docs/screenshots/welcome.png) | ![Home](./docs/screenshots/home.png) | ![Profile](./docs/screenshots/profile.png) |
 
-```sh
-# Using npm
+---
+
+## Features
+
+### Auth
+- Animated welcome carousel on first launch ([`WelcomeScreen.jsx`](src/screens/auth/WelcomeScreen.jsx))
+- Email/password login ([`LoginScreen.jsx`](src/screens/auth/LoginScreen.jsx))
+- New account signup ([`SignupScreen.jsx`](src/screens/auth/SignupScreen.jsx))
+
+### Main Tabs
+- **Home** — local feed of posts and events from nearby users
+- **Explore** — map-based discovery of people and activity in your area
+- **Create** — compose and publish a new local post or event
+- **Notifications** — activity alerts and updates
+- **Profile** — view your own posts, stats, and account details
+
+### Profile Editing
+- Pick or capture an avatar via camera or photo library (`react-native-image-picker`)
+- Edit display name
+- Date of birth picker (`@react-native-community/datetimepicker`)
+- Gender selection
+- Contact information fields
+
+### Post Detail
+- Full post view with author info, body, and interaction controls
+
+### Location Services
+- Device location via `@react-native-community/geolocation`
+- Map rendering with `react-native-maps`
+- Location state managed globally via `useLocationStore`
+
+---
+
+## Tech Stack
+
+| Layer | Library |
+|-------|---------|
+| Framework | React Native 0.85, React 19 |
+| Navigation | `@react-navigation/native`, `@react-navigation/stack`, `@react-navigation/bottom-tabs` |
+| State | Zustand 5 |
+| Maps | `react-native-maps` |
+| Location | `@react-native-community/geolocation` |
+| Image picker | `react-native-image-picker` |
+| Date picker | `@react-native-community/datetimepicker` |
+| Gradients | `react-native-linear-gradient` |
+| Icons | `react-native-vector-icons` |
+| Animation | `react-native-reanimated`, `react-native-worklets` |
+| Gestures | `react-native-gesture-handler` |
+| Safe area | `react-native-safe-area-context` |
+| Storage | `@react-native-async-storage/async-storage` |
+| Language | TypeScript 5 |
+
+---
+
+## Project Structure
+
+```text
+src/
+├── assets/          # Images, fonts, and other static files
+├── components/      # Shared UI components used across screens
+├── constants/       # App-wide constant values (routes, keys, etc.)
+├── navigation/      # Stack and tab navigator definitions
+│   └── AppNavigator.jsx
+├── screens/         # Screen-level components grouped by feature
+│   ├── auth/        # WelcomeScreen, LoginScreen, SignupScreen
+│   ├── home/        # Home feed screen
+│   ├── explore/     # Map/discovery screen
+│   ├── create/      # Post creation screen
+│   ├── notifications/ # Notifications screen
+│   └── profile/     # Profile view and edit screens
+├── store/           # Zustand stores (auth, location)
+└── theme/           # Colors, spacing, and typography tokens
+```
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+| Tool | Version |
+|------|---------|
+| Node.js | >= 22.11.0 |
+| JDK | 17 |
+| Android Studio | Latest stable |
+| Android SDK | API 33+ recommended |
+
+You also need either:
+- A physical Android device with **USB debugging** enabled, or
+- An Android emulator created in Android Studio's AVD Manager.
+
+### Install dependencies
+
+```bash
+npm install
+```
+
+### Start Metro bundler
+
+```bash
 npm start
-
-# OR using Yarn
-yarn start
 ```
 
-## Step 2: Build and run your app
+### Run on Android
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
+```powershell
 npm run android
-
-# OR using Yarn
-yarn android
 ```
 
-### iOS
+> **iOS:** Requires macOS, Xcode, and running `pod install` inside the `ios/` directory. iOS is **not currently configured** for this project (developed on Windows).
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+---
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+## Available Scripts
 
-```sh
-bundle install
+| Script | Command | What it does |
+|--------|---------|--------------|
+| `start` | `react-native start` | Starts the Metro JavaScript bundler |
+| `android` | `react-native run-android` | Builds and launches the app on a connected Android device or emulator |
+| `ios` | `react-native run-ios` | Builds and launches on iOS simulator (macOS + Xcode required) |
+| `lint` | `eslint .` | Runs ESLint across the entire project |
+| `test` | `jest` | Runs the Jest test suite |
+
+---
+
+## State Management
+
+Circl uses [Zustand 5](https://zustand.docs.pmnd.rs/) for global state. There are two stores:
+
+**`useAuthStore`** (`src/store/`) holds the current user object along with `login`, `logout`, and `updateUser` actions. On login, user data is written into the store; on logout, it is cleared.
+
+**`useLocationStore`** (`src/store/`) holds the device's current coordinates and exposes actions to update them as the user moves.
+
+Neither store currently persists to disk between app launches — see [Roadmap](#roadmap).
+
+---
+
+## Theme
+
+Design tokens live in `src/theme/`. Import from there rather than hard-coding values in components.
+
+- **Primary colour:** `#1D9E75` (brand green)
+- `src/theme/colors.js` — full colour palette including background, text, and accent values
+- Spacing scale and typography definitions are co-located in the same folder
+
+The root `App.jsx` reads `colors.background` from this theme to set the `StatusBar` background.
+
+---
+
+## Troubleshooting
+
+**Native module errors after `npm install`**
+Any package with native code (maps, image picker, reanimated, etc.) requires a full rebuild:
+```bash
+npm run android
+```
+If errors persist, clean the build first:
+```powershell
+cd android && ./gradlew clean && cd ..
+npm run android
 ```
 
-Then, and every time you update your native dependencies, run:
+**`adb devices` returns empty**
+- Ensure USB debugging is enabled on the device (Developer Options).
+- Try a different USB cable or port.
+- Run `adb kill-server && adb start-server`, then replug the device.
 
-```sh
-bundle exec pod install
+**Metro port 8081 already in use**
+Start Metro on a different port:
+```bash
+npm start -- --port 8082
+```
+Then in a second terminal:
+```bash
+npm run android -- --port 8082
 ```
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+**Gradle is slow on first build**
+Expected — Gradle downloads dependencies and compiles native code on the first run. Subsequent builds are significantly faster. Ensure you have a stable internet connection for the first build.
 
-```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
+**`react-native-vector-icons` icons not showing**
+Add the fonts to `android/app/build.gradle`:
+```gradle
+apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
 ```
+Then rebuild.
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+---
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+## Roadmap
 
-## Step 3: Modify your app
+- Auth persistence across sessions using `@react-native-async-storage/async-storage` (dependency already installed)
+- iOS project setup (requires macOS build machine)
+- Real backend integration (API, WebSockets for live local feed)
+- Push notifications
+- Post interactions (likes, comments, shares)
+- User discovery and follow system
 
-Now that you have successfully run the app, let's make changes!
+---
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+## License
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+MIT — see [LICENSE](./LICENSE) for details.
