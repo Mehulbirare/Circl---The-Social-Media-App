@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -7,13 +7,18 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
-import { useAuthStore } from '../../store/useAuthStore';
-import { requestLocationPermission } from '../../utils/permissions';
+import {
+  requestLocationPermission,
+  getCurrentPosition,
+} from '../../utils/permissions';
+import { signUp } from '../../services/authService';
+import { updateProfile } from '../../services/profileService';
 import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
@@ -30,14 +35,37 @@ const SignupScreen = ({ navigation }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const login = useAuthStore((s) => s.login);
+  const [loading, setLoading] = useState(false);
+  const coordsRef = useRef(null);
 
   useEffect(() => {
-    requestLocationPermission();
+    (async () => {
+      const granted = await requestLocationPermission();
+      if (granted) {
+        coordsRef.current = await getCurrentPosition();
+      }
+    })();
   }, []);
 
-  const handleSignup = () => {
-    login({ name: name || 'You', email: email || 'you@circl.app' });
+  const handleSignup = async () => {
+    if (!name.trim() || !email.trim() || !password) {
+      Alert.alert('Missing info', 'Please fill in your name, email, and password.');
+      return;
+    }
+    try {
+      setLoading(true);
+      await signUp({ fullName: name.trim(), email: email.trim(), password });
+      if (coordsRef.current) {
+        await updateProfile({
+          lat: coordsRef.current.lat,
+          lng: coordsRef.current.lng,
+        });
+      }
+    } catch (e) {
+      Alert.alert('Sign up failed', e.message || 'Something went wrong.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -96,7 +124,11 @@ const SignupScreen = ({ navigation }) => {
               leftIcon="lock-outline"
             />
 
-            <Button label="Create account" onPress={handleSignup} />
+            <Button
+              label="Create account"
+              onPress={handleSignup}
+              loading={loading}
+            />
 
             <View style={styles.dividerRow}>
               <View style={styles.dividerLine} />

@@ -7,12 +7,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
-import { useAuthStore } from '../../store/useAuthStore';
+import { signIn } from '../../services/authService';
 import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
@@ -28,10 +29,21 @@ const LoginScreen = ({ navigation }) => {
   const styles = useThemedStyles(makeStyles);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const login = useAuthStore((s) => s.login);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    login({ name: 'Aarav', email: email || 'aarav@circl.app' });
+  const handleLogin = async () => {
+    if (!email.trim() || !password) {
+      Alert.alert('Missing info', 'Please enter your email and password.');
+      return;
+    }
+    try {
+      setLoading(true);
+      await signIn({ email: email.trim(), password });
+    } catch (e) {
+      Alert.alert('Log in failed', e.message || 'Invalid credentials.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -86,7 +98,7 @@ const LoginScreen = ({ navigation }) => {
               <Text style={styles.forgotText}>Forgot password?</Text>
             </TouchableOpacity>
 
-            <Button label="Log in" onPress={handleLogin} />
+            <Button label="Log in" onPress={handleLogin} loading={loading} />
 
             <View style={styles.dividerRow}>
               <View style={styles.dividerLine} />

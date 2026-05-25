@@ -1,4 +1,5 @@
 import { Platform, PermissionsAndroid, Alert } from 'react-native';
+import Geolocation from '@react-native-community/geolocation';
 
 export const requestLocationPermission = async () => {
   try {
@@ -20,3 +21,13 @@ export const requestLocationPermission = async () => {
     return false;
   }
 };
+
+export const getCurrentPosition = () =>
+  new Promise((resolve) => {
+    Geolocation.getCurrentPosition(
+      (pos) =>
+        resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => resolve(null),
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 },
+    );
+  });
