@@ -7,6 +7,7 @@ import CreatePostScreen from '../screens/main/CreatePostScreen';
 import ChatScreen from '../screens/main/ChatScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
 import EditProfileScreen from '../screens/main/EditProfileScreen';
+import SettingsScreen from '../screens/main/SettingsScreen';
 import PostDetailScreen from '../screens/post/PostDetailScreen';
 import BottomTabBar from '../components/navigation/BottomTabBar';
 
@@ -30,6 +31,7 @@ const MainNavigator = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="Tabs" component={Tabs} />
     <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+    <Stack.Screen name="Settings" component={SettingsScreen} />
     <Stack.Screen name="PostDetail" component={PostDetailScreen} />
   </Stack.Navigator>
 );

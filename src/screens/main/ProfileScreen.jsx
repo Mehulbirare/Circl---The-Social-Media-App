@@ -74,7 +74,11 @@ const ProfileScreen = ({ navigation }) => {
           <SafeAreaView edges={['top']} style={styles.heroSafe}>
             <View style={styles.topBar}>
               <Text style={styles.topTitle}>Profile</Text>
-              <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
+              <TouchableOpacity
+                style={styles.iconBtn}
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate('Settings')}
+              >
                 <Icon name="cog-outline" size={20} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
