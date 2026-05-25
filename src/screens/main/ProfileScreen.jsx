@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -14,58 +15,48 @@ import Avatar from '../../components/common/Avatar';
 import SkeletonProfile from '../../components/skeleton/SkeletonProfile';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useLocationStore } from '../../store/useLocationStore';
+import { getMyProfile, getProfileStats } from '../../services/profileService';
+import { signOut } from '../../services/authService';
 import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
-
-const ACTION_CARDS = [
-  {
-    key: 'posts',
-    label: 'Posts',
-    value: '24',
-    icon: 'image-multiple',
-    gradient: ['#1D9E75', '#0E7A57'],
-  },
-  {
-    key: 'saved',
-    label: 'Saved',
-    value: '12',
-    icon: 'bookmark',
-    gradient: ['#F59E0B', '#D97706'],
-  },
-  {
-    key: 'events',
-    label: 'Events',
-    value: '3',
-    icon: 'calendar-star',
-    gradient: ['#8B5CF6', '#6D28D9'],
-  },
-  {
-    key: 'friends',
-    label: 'Friends',
-    value: '184',
-    icon: 'account-group',
-    gradient: ['#3B82F6', '#1D4ED8'],
-  },
-];
 
 const ProfileScreen = ({ navigation }) => {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const user = useAuthStore((s) => s.user);
-  const logout = useAuthStore((s) => s.logout);
-  const city = useLocationStore((s) => s.city);
-  const region = useLocationStore((s) => s.region);
-  const name = user?.name || 'You';
-  const bio =
-    user?.bio || 'Building communities, one neighbourhood at a time.';
-  const avatar = user?.avatar || null;
+  const login = useAuthStore((s) => s.login);
+  const storeCity = useLocationStore((s) => s.city);
+  const storeRegion = useLocationStore((s) => s.region);
+  const [stats, setStats] = useState({ posts: 0, followers: 0, following: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 1100);
-    return () => clearTimeout(t);
-  }, []);
+    let active = true;
+    (async () => {
+      try {
+        const profile = await getMyProfile();
+        if (!active) return;
+        login(profile);
+        const s = await getProfileStats(profile.id);
+        if (!active) return;
+        setStats(s);
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [login]);
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (err) {
+      Alert.alert('Could not log out', err.message || 'Please try again.');
+    }
+  };
 
   if (loading) {
     return (
@@ -75,6 +66,44 @@ const ProfileScreen = ({ navigation }) => {
       </View>
     );
   }
+
+  const name = user?.full_name || 'You';
+  const bio =
+    user?.bio || 'Building communities, one neighbourhood at a time.';
+  const avatar = user?.avatar_url || null;
+  const city = user?.city || storeCity;
+  const region = user?.region || storeRegion;
+
+  const actionCards = [
+    {
+      key: 'posts',
+      label: 'Posts',
+      value: String(stats.posts),
+      icon: 'image-multiple',
+      gradient: ['#1D9E75', '#0E7A57'],
+    },
+    {
+      key: 'saved',
+      label: 'Saved',
+      value: '12',
+      icon: 'bookmark',
+      gradient: ['#F59E0B', '#D97706'],
+    },
+    {
+      key: 'events',
+      label: 'Events',
+      value: '3',
+      icon: 'calendar-star',
+      gradient: ['#8B5CF6', '#6D28D9'],
+    },
+    {
+      key: 'friends',
+      label: 'Friends',
+      value: String(stats.following),
+      icon: 'account-group',
+      gradient: ['#3B82F6', '#1D4ED8'],
+    },
+  ];
 
   const Stat = ({ value, label }) => (
     <View style={styles.stat}>
@@ -138,11 +167,11 @@ const ProfileScreen = ({ navigation }) => {
 
         <View style={styles.statsCardWrap}>
           <View style={styles.statsCard}>
-            <Stat value="24" label="Posts" />
+            <Stat value={String(stats.posts)} label="Posts" />
             <View style={styles.statDivider} />
-            <Stat value="312" label="Followers" />
+            <Stat value={String(stats.followers)} label="Followers" />
             <View style={styles.statDivider} />
-            <Stat value="184" label="Following" />
+            <Stat value={String(stats.following)} label="Following" />
           </View>
         </View>
 
@@ -163,7 +192,7 @@ const ProfileScreen = ({ navigation }) => {
           </TouchableOpacity>
 
           <View style={styles.grid}>
-            {ACTION_CARDS.map((card) => (
+            {actionCards.map((card) => (
               <TouchableOpacity
                 key={card.key}
                 style={styles.actionShadow}
@@ -203,7 +232,7 @@ const ProfileScreen = ({ navigation }) => {
 
           <TouchableOpacity
             style={styles.logoutBtn}
-            onPress={logout}
+            onPress={handleLogout}
             activeOpacity={0.85}
           >
             <Icon name="logout" size={18} color={colors.danger} />
