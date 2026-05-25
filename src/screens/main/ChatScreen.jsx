@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Avatar from '../../components/common/Avatar';
+import SkeletonChatRow from '../../components/skeleton/SkeletonChatRow';
 import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
@@ -55,6 +56,13 @@ const CHATS = [
 const ChatScreen = () => {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setLoading(false), 1000);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
@@ -63,6 +71,11 @@ const ChatScreen = () => {
           <Icon name="square-edit-outline" size={22} color={colors.textPrimary} />
         </TouchableOpacity>
       </View>
+      {loading ? (
+        <View style={styles.content}>
+          <SkeletonChatRow.List count={6} />
+        </View>
+      ) : (
       <FlatList
         data={CHATS}
         keyExtractor={(item) => item.id}
@@ -98,6 +111,7 @@ const ChatScreen = () => {
           </TouchableOpacity>
         )}
       />
+      )}
     </SafeAreaView>
   );
 };

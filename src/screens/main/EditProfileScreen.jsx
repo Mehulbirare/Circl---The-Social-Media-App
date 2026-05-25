@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Avatar from '../../components/common/Avatar';
+import SkeletonEditProfile from '../../components/skeleton/SkeletonEditProfile';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
@@ -32,6 +33,12 @@ const EditProfileScreen = ({ navigation }) => {
   const [mobile, setMobile] = useState(user?.mobile || '');
   const [email, setEmail] = useState(user?.email || '');
   const [avatarUri, setAvatarUri] = useState(user?.avatar || null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setLoading(false), 900);
+    return () => clearTimeout(t);
+  }, []);
 
   const handlePickImage = () => {
     Alert.alert('Profile photo', 'Choose a source', [
@@ -149,6 +156,9 @@ const EditProfileScreen = ({ navigation }) => {
         <View style={{ width: 24 }} />
       </View>
 
+      {loading ? (
+        <SkeletonEditProfile />
+      ) : (
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
@@ -247,7 +257,9 @@ const EditProfileScreen = ({ navigation }) => {
           autoCapitalize="none"
         />
       </ScrollView>
+      )}
 
+      {!loading && (
       <SafeAreaView style={styles.footer} edges={['bottom']}>
         <TouchableOpacity
           style={styles.saveBtn}
@@ -257,6 +269,7 @@ const EditProfileScreen = ({ navigation }) => {
           <Text style={styles.saveText}>Save</Text>
         </TouchableOpacity>
       </SafeAreaView>
+      )}
     </SafeAreaView>
   );
 };

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import FeedList from '../../components/feed/FeedList';
+import SkeletonFeed from '../../components/skeleton/SkeletonFeed';
 import { useLocationStore } from '../../store/useLocationStore';
 import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
@@ -64,6 +65,12 @@ const HomeScreen = ({ navigation }) => {
   const city = useLocationStore((s) => s.city);
   const region = useLocationStore((s) => s.region);
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setLoading(false), 1200);
+    return () => clearTimeout(t);
+  }, []);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -89,12 +96,16 @@ const HomeScreen = ({ navigation }) => {
           </Text>
         </View>
       </View>
-      <FeedList
-        posts={MOCK_POSTS}
-        refreshing={refreshing}
-        onRefresh={handleRefresh}
-        onPressPost={(post) => navigation.navigate('PostDetail', { post })}
-      />
+      {loading ? (
+        <SkeletonFeed count={4} />
+      ) : (
+        <FeedList
+          posts={MOCK_POSTS}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
+          onPressPost={(post) => navigation.navigate('PostDetail', { post })}
+        />
+      )}
     </SafeAreaView>
   );
 };

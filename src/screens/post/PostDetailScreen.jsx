@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Avatar from '../../components/common/Avatar';
 import PostActions from '../../components/feed/PostActions';
+import SkeletonPostDetail from '../../components/skeleton/SkeletonPostDetail';
 import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
@@ -48,6 +49,12 @@ const PostDetailScreen = ({ route, navigation }) => {
     comments: 3,
   };
 
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setLoading(false), 900);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
@@ -61,6 +68,9 @@ const PostDetailScreen = ({ route, navigation }) => {
         <Text style={styles.headerTitle}>Post</Text>
         <View style={styles.backBtn} />
       </View>
+      {loading ? (
+        <SkeletonPostDetail />
+      ) : (
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
@@ -89,6 +99,7 @@ const PostDetailScreen = ({ route, navigation }) => {
           </View>
         ))}
       </ScrollView>
+      )}
     </SafeAreaView>
   );
 };

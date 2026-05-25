@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import Avatar from '../../components/common/Avatar';
+import SkeletonProfile from '../../components/skeleton/SkeletonProfile';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useLocationStore } from '../../store/useLocationStore';
 import { useColors, useThemedStyles } from '../../theme/useColors';
@@ -59,6 +60,21 @@ const ProfileScreen = ({ navigation }) => {
   const bio =
     user?.bio || 'Building communities, one neighbourhood at a time.';
   const avatar = user?.avatar || null;
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setLoading(false), 1100);
+    return () => clearTimeout(t);
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" />
+        <SkeletonProfile />
+      </View>
+    );
+  }
 
   const Stat = ({ value, label }) => (
     <View style={styles.stat}>

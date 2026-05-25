@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Avatar from '../../components/common/Avatar';
+import SkeletonExplore from '../../components/skeleton/SkeletonExplore';
 import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
@@ -28,6 +29,12 @@ const ExploreScreen = () => {
   const styles = useThemedStyles(makeStyles);
   const [query, setQuery] = useState('');
   const [following, setFollowing] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const t = setTimeout(() => setLoading(false), 1100);
+    return () => clearTimeout(t);
+  }, []);
 
   const toggleFollow = (id) =>
     setFollowing((prev) => ({ ...prev, [id]: !prev[id] }));
@@ -44,6 +51,9 @@ const ExploreScreen = () => {
           placeholderTextColor={colors.textSecondary}
         />
       </View>
+      {loading ? (
+        <SkeletonExplore />
+      ) : (
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -98,6 +108,7 @@ const ExploreScreen = () => {
           );
         })}
       </ScrollView>
+      )}
     </SafeAreaView>
   );
 };
