@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AppNavigator from './src/navigation/AppNavigator';
 import Loader from './src/components/common/Loader';
 import { useAuthStore } from './src/store/useAuthStore';
+import { useLocationStore } from './src/store/useLocationStore';
 import { getSession, onAuthChange } from './src/services/authService';
 import { getMyProfile } from './src/services/profileService';
 import { useColors } from './src/theme/useColors';
@@ -25,6 +26,7 @@ const AppShell = () => {
   const login = useAuthStore((s) => s.login);
   const logout = useAuthStore((s) => s.logout);
   const setHydrated = useAuthStore((s) => s.setHydrated);
+  const initLocation = useLocationStore((s) => s.init);
 
   useEffect(() => {
     let active = true;
@@ -39,7 +41,10 @@ const AppShell = () => {
       } catch (_) {
         // ignore — user just stays logged out
       } finally {
-        if (active) setHydrated();
+        if (active) {
+          setHydrated();
+          initLocation();
+        }
       }
     })();
 
@@ -61,7 +66,7 @@ const AppShell = () => {
       active = false;
       sub.subscription.unsubscribe();
     };
-  }, [login, logout, setHydrated]);
+  }, [login, logout, setHydrated, initLocation]);
 
   if (hydrating) return <Loader />;
   return <AppNavigator />;
