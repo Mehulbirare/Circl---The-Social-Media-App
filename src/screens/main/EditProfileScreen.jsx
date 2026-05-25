@@ -16,6 +16,8 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import Avatar from '../../components/common/Avatar';
 import SkeletonEditProfile from '../../components/skeleton/SkeletonEditProfile';
 import { useAuthStore } from '../../store/useAuthStore';
+import { updateProfile } from '../../services/profileService';
+import { uploadAvatar } from '../../services/imageService';
 import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
@@ -24,19 +26,20 @@ const EditProfileScreen = ({ navigation }) => {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const user = useAuthStore((s) => s.user);
-  const updateUser = useAuthStore((s) => s.updateUser);
+  const login = useAuthStore((s) => s.login);
 
-  const [fullName, setFullName] = useState(user?.name || '');
+  const [fullName, setFullName] = useState(user?.full_name || '');
   const [dob, setDob] = useState(user?.dob ? new Date(user.dob) : null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [gender, setGender] = useState(user?.gender || 'male');
   const [mobile, setMobile] = useState(user?.mobile || '');
   const [email, setEmail] = useState(user?.email || '');
-  const [avatarUri, setAvatarUri] = useState(user?.avatar || null);
+  const [avatarUri, setAvatarUri] = useState(user?.avatar_url || null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 900);
+    const t = setTimeout(() => setLoading(false), 400);
     return () => clearTimeout(t);
   }, []);
 
@@ -74,21 +77,33 @@ const EditProfileScreen = ({ navigation }) => {
     if (uri) setAvatarUri(uri);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const trimmedName = fullName.trim();
     if (!trimmedName) {
       Alert.alert('Name required', 'Please enter your full name.');
       return;
     }
-    updateUser({
-      name: trimmedName,
-      dob: dob ? dob.toISOString() : null,
-      gender,
-      mobile: mobile.trim(),
-      email: email.trim(),
-      avatar: avatarUri,
-    });
-    navigation.goBack();
+    if (saving) return;
+    setSaving(true);
+    try {
+      let avatarUrl = avatarUri;
+      if (avatarUri && avatarUri.startsWith('file://')) {
+        avatarUrl = await uploadAvatar(avatarUri);
+      }
+      const updated = await updateProfile({
+        full_name: trimmedName,
+        dob: dob ? dob.toISOString().slice(0, 10) : null,
+        gender,
+        mobile: mobile.trim(),
+        avatar_url: avatarUrl,
+      });
+      login(updated);
+      navigation.goBack();
+    } catch (err) {
+      Alert.alert('Could not save', err.message || 'Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleDateChange = (event, selectedDate) => {
@@ -255,6 +270,7 @@ const EditProfileScreen = ({ navigation }) => {
           placeholder="you@example.com"
           keyboardType="email-address"
           autoCapitalize="none"
+          editable={false}
         />
       </ScrollView>
       )}
@@ -262,11 +278,12 @@ const EditProfileScreen = ({ navigation }) => {
       {!loading && (
       <SafeAreaView style={styles.footer} edges={['bottom']}>
         <TouchableOpacity
-          style={styles.saveBtn}
+          style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
           onPress={handleSave}
           activeOpacity={0.9}
+          disabled={saving}
         >
-          <Text style={styles.saveText}>Save</Text>
+          <Text style={styles.saveText}>{saving ? 'Saving...' : 'Save'}</Text>
         </TouchableOpacity>
       </SafeAreaView>
       )}
@@ -405,6 +422,9 @@ const makeStyles = (colors) =>
       backgroundColor: colors.primary,
       alignItems: 'center',
       justifyContent: 'center',
+    },
+    saveBtnDisabled: {
+      opacity: 0.6,
     },
     saveText: {
       color: '#FFFFFF',

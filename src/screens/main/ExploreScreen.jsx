@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -6,38 +6,116 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Avatar from '../../components/common/Avatar';
 import SkeletonExplore from '../../components/skeleton/SkeletonExplore';
+import { useLocationStore } from '../../store/useLocationStore';
+import {
+  getNearbyUsers,
+  searchUsers,
+  follow,
+  unfollow,
+} from '../../services/usersService';
+import { supabase } from '../../lib/supabase';
 import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 
 const TOPICS = ['#Food', '#Events', '#Help', '#Sports', '#News'];
 
-const NEARBY = [
-  { id: '1', name: 'Diya Bhatt', distance: '0.6 km away' },
-  { id: '2', name: 'Vivaan Shah', distance: '1.1 km away' },
-  { id: '3', name: 'Sneha Iyer', distance: '2.3 km away' },
-  { id: '4', name: 'Arjun Kapoor', distance: '3.7 km away' },
-];
+const formatDistance = (km) => {
+  if (km == null) return '';
+  if (km < 1) return `${Math.round(km * 1000)} m away`;
+  return `${km.toFixed(1)} km away`;
+};
 
 const ExploreScreen = () => {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
+  const coords = useLocationStore((s) => s.coords);
   const [query, setQuery] = useState('');
-  const [following, setFollowing] = useState({});
+  const [users, setUsers] = useState([]);
+  const [searchResults, setSearchResults] = useState(null);
+  const [followingSet, setFollowingSet] = useState(new Set());
   const [loading, setLoading] = useState(true);
+  const searchTimer = useRef(null);
 
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 1100);
-    return () => clearTimeout(t);
-  }, []);
+    if (!coords) return undefined;
+    let active = true;
+    (async () => {
+      try {
+        const [nearby, follows] = await Promise.all([
+          getNearbyUsers({ lat: coords.lat, lng: coords.lng, radiusKm: 5 }),
+          loadCurrentFollows(),
+        ]);
+        if (!active) return;
+        setUsers(nearby || []);
+        setFollowingSet(new Set(follows));
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [coords]);
 
-  const toggleFollow = (id) =>
-    setFollowing((prev) => ({ ...prev, [id]: !prev[id] }));
+  useEffect(() => {
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    const q = query.trim();
+    if (!q) {
+      setSearchResults(null);
+      return undefined;
+    }
+    searchTimer.current = setTimeout(async () => {
+      try {
+        const rows = await searchUsers(q);
+        setSearchResults(rows || []);
+      } catch (_) {
+        setSearchResults([]);
+      }
+    }, 300);
+    return () => clearTimeout(searchTimer.current);
+  }, [query]);
+
+  const toggleFollow = async (userId) => {
+    const isFollowing = followingSet.has(userId);
+    const next = new Set(followingSet);
+    if (isFollowing) next.delete(userId);
+    else next.add(userId);
+    setFollowingSet(next);
+    try {
+      if (isFollowing) await unfollow(userId);
+      else await follow(userId);
+    } catch (err) {
+      const revert = new Set(next);
+      if (isFollowing) revert.add(userId);
+      else revert.delete(userId);
+      setFollowingSet(revert);
+      Alert.alert('Could not update follow', err.message || 'Please try again.');
+    }
+  };
+
+  const visible = useMemo(() => {
+    if (searchResults == null) {
+      return users.map((u) => ({
+        id: u.id,
+        name: u.full_name,
+        avatar: u.avatar_url,
+        subtitle: formatDistance(u.distance_km),
+      }));
+    }
+    return searchResults.map((u) => ({
+      id: u.id,
+      name: u.full_name,
+      avatar: u.avatar_url,
+      subtitle: u.city || '',
+    }));
+  }, [users, searchResults]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -49,69 +127,102 @@ const ExploreScreen = () => {
           onChangeText={setQuery}
           placeholder="Search people, topics, places"
           placeholderTextColor={colors.textSecondary}
+          autoCapitalize="none"
         />
       </View>
       {loading ? (
         <SkeletonExplore />
       ) : (
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        <Text style={styles.sectionTitle}>Trending near you</Text>
         <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.pillsRow}
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
-          {TOPICS.map((topic) => (
-            <TouchableOpacity
-              key={topic}
-              style={styles.pill}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.pillText}>{topic}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        <Text style={[styles.sectionTitle, styles.sectionTitleSpaced]}>
-          People nearby
-        </Text>
-        {NEARBY.map((user) => {
-          const isFollowing = !!following[user.id];
-          return (
-            <View key={user.id} style={styles.userCard}>
-              <Avatar name={user.name} />
-              <View style={styles.userInfo}>
-                <Text style={styles.userName}>{user.name}</Text>
-                <Text style={styles.userDist}>{user.distance}</Text>
-              </View>
-              <TouchableOpacity
-                style={[
-                  styles.followBtn,
-                  isFollowing && styles.followingBtn,
-                ]}
-                onPress={() => toggleFollow(user.id)}
-                activeOpacity={0.85}
+          {searchResults == null && (
+            <>
+              <Text style={styles.sectionTitle}>Trending near you</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.pillsRow}
               >
-                <Text
-                  style={[
-                    styles.followText,
-                    isFollowing && styles.followingText,
-                  ]}
-                >
-                  {isFollowing ? 'Following' : 'Follow'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          );
-        })}
-      </ScrollView>
+                {TOPICS.map((topic) => (
+                  <TouchableOpacity
+                    key={topic}
+                    style={styles.pill}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.pillText}>{topic}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </>
+          )}
+
+          <Text
+            style={[
+              styles.sectionTitle,
+              searchResults == null && styles.sectionTitleSpaced,
+            ]}
+          >
+            {searchResults == null ? 'People nearby' : 'Search results'}
+          </Text>
+          {visible.length === 0 ? (
+            <Text style={styles.empty}>
+              {searchResults == null
+                ? 'No one nearby yet.'
+                : 'No matches.'}
+            </Text>
+          ) : (
+            visible.map((u) => {
+              const isFollowing = followingSet.has(u.id);
+              return (
+                <View key={u.id} style={styles.userCard}>
+                  <Avatar name={u.name} uri={u.avatar} />
+                  <View style={styles.userInfo}>
+                    <Text style={styles.userName}>{u.name}</Text>
+                    {u.subtitle ? (
+                      <Text style={styles.userDist}>{u.subtitle}</Text>
+                    ) : null}
+                  </View>
+                  <TouchableOpacity
+                    style={[
+                      styles.followBtn,
+                      isFollowing && styles.followingBtn,
+                    ]}
+                    onPress={() => toggleFollow(u.id)}
+                    activeOpacity={0.85}
+                  >
+                    <Text
+                      style={[
+                        styles.followText,
+                        isFollowing && styles.followingText,
+                      ]}
+                    >
+                      {isFollowing ? 'Following' : 'Follow'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              );
+            })
+          )}
+        </ScrollView>
       )}
     </SafeAreaView>
   );
 };
+
+async function loadCurrentFollows() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data } = await supabase
+    .from('follows')
+    .select('following_id')
+    .eq('follower_id', user.id);
+  return (data || []).map((r) => r.following_id);
+}
 
 const makeStyles = (colors) =>
   StyleSheet.create({
@@ -164,6 +275,11 @@ const makeStyles = (colors) =>
       color: colors.primary,
       fontWeight: typography.weight.medium,
       fontSize: typography.size.sm,
+    },
+    empty: {
+      fontSize: typography.size.sm,
+      color: colors.textSecondary,
+      paddingVertical: spacing.md,
     },
     userCard: {
       flexDirection: 'row',

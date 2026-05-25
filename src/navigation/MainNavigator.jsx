@@ -5,6 +5,7 @@ import HomeScreen from '../screens/main/HomeScreen';
 import ExploreScreen from '../screens/main/ExploreScreen';
 import CreatePostScreen from '../screens/main/CreatePostScreen';
 import ChatScreen from '../screens/main/ChatScreen';
+import ChatThreadScreen from '../screens/main/ChatThreadScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
 import EditProfileScreen from '../screens/main/EditProfileScreen';
 import SettingsScreen from '../screens/main/SettingsScreen';
@@ -33,6 +34,7 @@ const MainNavigator = () => (
     <Stack.Screen name="EditProfile" component={EditProfileScreen} />
     <Stack.Screen name="Settings" component={SettingsScreen} />
     <Stack.Screen name="PostDetail" component={PostDetailScreen} />
+    <Stack.Screen name="ChatThread" component={ChatThreadScreen} />
   </Stack.Navigator>
 );
 

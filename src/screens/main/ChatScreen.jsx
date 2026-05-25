@@ -1,67 +1,54 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Avatar from '../../components/common/Avatar';
 import SkeletonChatRow from '../../components/skeleton/SkeletonChatRow';
+import { getChats } from '../../services/chatService';
 import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 
-const CHATS = [
-  {
-    id: '1',
-    name: 'Anaya Shah',
-    lastMessage: 'See you at the meetup tomorrow!',
-    time: '2m',
-    unread: 2,
-  },
-  {
-    id: '2',
-    name: 'Karan Patel',
-    lastMessage: 'Thanks for sharing the article 🙌',
-    time: '20m',
-    unread: 0,
-  },
-  {
-    id: '3',
-    name: 'Meera Joshi',
-    lastMessage: 'Loved your latest post — saving for later!',
-    time: '1h',
-    unread: 1,
-  },
-  {
-    id: '4',
-    name: 'Rahul Desai',
-    lastMessage: 'Are we still on for Sunday?',
-    time: '3h',
-    unread: 0,
-  },
-  {
-    id: '5',
-    name: 'Priya Mehta',
-    lastMessage: 'Sent you the event details.',
-    time: '6h',
-    unread: 0,
-  },
-  {
-    id: '6',
-    name: 'Aditya Rao',
-    lastMessage: 'Great game today!',
-    time: '1d',
-    unread: 0,
-  },
-];
+const formatRelative = (iso) => {
+  if (!iso) return '';
+  const diff = Math.max(0, Date.now() - new Date(iso).getTime());
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'now';
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d}d`;
+  return `${Math.floor(d / 7)}w`;
+};
 
-const ChatScreen = () => {
+const ChatScreen = ({ navigation }) => {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
+  const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 1000);
-    return () => clearTimeout(t);
+  const load = useCallback(async () => {
+    const rows = await getChats();
+    setChats(rows || []);
   }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        await load();
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [load]);
+
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -76,41 +63,47 @@ const ChatScreen = () => {
           <SkeletonChatRow.List count={6} />
         </View>
       ) : (
-      <FlatList
-        data={CHATS}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={styles.row} activeOpacity={0.7}>
-            <Avatar name={item.name} />
-            <View style={styles.body}>
-              <View style={styles.topLine}>
-                <Text style={styles.name} numberOfLines={1}>
-                  {item.name}
-                </Text>
-                <Text style={styles.time}>{item.time}</Text>
+        <FlatList
+          data={chats}
+          keyExtractor={(item) => String(item.id)}
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <Text style={styles.empty}>
+              No conversations yet. Say hi to someone nearby.
+            </Text>
+          }
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={styles.row}
+              activeOpacity={0.7}
+              onPress={() =>
+                navigation.navigate('ChatThread', {
+                  chatId: item.id,
+                  other: item.other,
+                })
+              }
+            >
+              <Avatar
+                name={item.other?.full_name || 'User'}
+                uri={item.other?.avatar_url}
+              />
+              <View style={styles.body}>
+                <View style={styles.topLine}>
+                  <Text style={styles.name} numberOfLines={1}>
+                    {item.other?.full_name || 'User'}
+                  </Text>
+                  <Text style={styles.time}>{formatRelative(item.updatedAt)}</Text>
+                </View>
+                <View style={styles.bottomLine}>
+                  <Text style={styles.message} numberOfLines={1}>
+                    {item.lastMessage || 'Tap to start chatting'}
+                  </Text>
+                </View>
               </View>
-              <View style={styles.bottomLine}>
-                <Text
-                  style={[
-                    styles.message,
-                    item.unread > 0 && styles.messageUnread,
-                  ]}
-                  numberOfLines={1}
-                >
-                  {item.lastMessage}
-                </Text>
-                {item.unread > 0 && (
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText}>{item.unread}</Text>
-                  </View>
-                )}
-              </View>
-            </View>
-          </TouchableOpacity>
-        )}
-      />
+            </TouchableOpacity>
+          )}
+        />
       )}
     </SafeAreaView>
   );
@@ -147,6 +140,11 @@ const makeStyles = (colors) =>
     content: {
       padding: spacing.lg,
       paddingTop: spacing.sm,
+    },
+    empty: {
+      textAlign: 'center',
+      color: colors.textSecondary,
+      paddingVertical: spacing.huge,
     },
     row: {
       flexDirection: 'row',
@@ -188,25 +186,6 @@ const makeStyles = (colors) =>
       flex: 1,
       fontSize: typography.size.sm,
       color: colors.textSecondary,
-    },
-    messageUnread: {
-      color: colors.textPrimary,
-      fontWeight: typography.weight.medium,
-    },
-    badge: {
-      minWidth: 20,
-      height: 20,
-      borderRadius: 10,
-      backgroundColor: colors.primary,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: 6,
-      marginLeft: spacing.sm,
-    },
-    badgeText: {
-      color: '#FFFFFF',
-      fontSize: typography.size.xs,
-      fontWeight: typography.weight.bold,
     },
   });
 
