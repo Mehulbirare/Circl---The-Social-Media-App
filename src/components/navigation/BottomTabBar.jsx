@@ -9,7 +9,7 @@ const TAB_ICONS = {
   Home: 'home-variant',
   Explore: 'compass-outline',
   Create: 'plus',
-  Notifications: 'bell-outline',
+  Chat: 'chat-outline',
   Profile: 'account-outline',
 };
 

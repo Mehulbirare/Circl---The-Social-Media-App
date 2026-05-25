@@ -4,7 +4,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import HomeScreen from '../screens/main/HomeScreen';
 import ExploreScreen from '../screens/main/ExploreScreen';
 import CreatePostScreen from '../screens/main/CreatePostScreen';
-import NotificationsScreen from '../screens/main/NotificationsScreen';
+import ChatScreen from '../screens/main/ChatScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
 import EditProfileScreen from '../screens/main/EditProfileScreen';
 import PostDetailScreen from '../screens/post/PostDetailScreen';
@@ -21,7 +21,7 @@ const Tabs = () => (
     <Tab.Screen name="Home" component={HomeScreen} />
     <Tab.Screen name="Explore" component={ExploreScreen} />
     <Tab.Screen name="Create" component={CreatePostScreen} />
-    <Tab.Screen name="Notifications" component={NotificationsScreen} />
+    <Tab.Screen name="Chat" component={ChatScreen} />
     <Tab.Screen name="Profile" component={ProfileScreen} />
   </Tab.Navigator>
 );
