@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../../components/common/Button';
-import { colors } from '../../theme/colors';
+import { useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 
@@ -47,6 +47,7 @@ const STACK_OFFSETS = [
 ];
 
 const WelcomeScreen = ({ navigation }) => {
+  const styles = useThemedStyles(makeStyles);
   const [currentIndex, setCurrentIndex] = useState(0);
   const positions = useRef(SLIDES.map((_, i) => new Animated.Value(i))).current;
   const fade = useRef(new Animated.Value(1)).current;
@@ -191,109 +192,110 @@ const WelcomeScreen = ({ navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.card,
-  },
-  safe: {
-    flex: 1,
-    paddingHorizontal: spacing.xl,
-  },
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: spacing.md,
-  },
-  brandCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 4,
-    borderColor: colors.primary,
-    marginRight: spacing.sm,
-  },
-  brandText: {
-    fontSize: 30,
-    fontWeight: typography.weight.bold,
-    color: colors.primary,
-    letterSpacing: -0.5,
-  },
-  deckWrap: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  deck: {
-    width: CARD_WIDTH,
-    height: CARD_HEIGHT,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  card: {
-    position: 'absolute',
-    width: CARD_WIDTH,
-    height: CARD_HEIGHT,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 6,
-    padding: 12,
-    paddingBottom: 40,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-  },
-  cardImage: {
-    flex: 1,
-    width: '100%',
-    backgroundColor: colors.primaryLight,
-  },
-  cardCaption: {
-    position: 'absolute',
-    bottom: 8,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-  },
-  cardCaptionText: {
-    fontSize: typography.size.sm,
-    color: colors.textSecondary,
-    fontStyle: 'italic',
-  },
-  dots: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: spacing.md,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.border,
-    marginHorizontal: 4,
-  },
-  dotActive: {
-    width: 22,
-    backgroundColor: colors.primary,
-  },
-  captionWrap: {
-    marginTop: spacing.xl,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: typography.weight.bold,
-    color: colors.textPrimary,
-    lineHeight: 38,
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: typography.size.md,
-    color: colors.textSecondary,
-    marginTop: spacing.sm,
-  },
-  actions: {
-    marginTop: spacing.xl,
-  },
-});
+const makeStyles = (colors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.card,
+    },
+    safe: {
+      flex: 1,
+      paddingHorizontal: spacing.xl,
+    },
+    brandRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: spacing.md,
+    },
+    brandCircle: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      borderWidth: 4,
+      borderColor: colors.primary,
+      marginRight: spacing.sm,
+    },
+    brandText: {
+      fontSize: 30,
+      fontWeight: typography.weight.bold,
+      color: colors.primary,
+      letterSpacing: -0.5,
+    },
+    deckWrap: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    deck: {
+      width: CARD_WIDTH,
+      height: CARD_HEIGHT,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    card: {
+      position: 'absolute',
+      width: CARD_WIDTH,
+      height: CARD_HEIGHT,
+      backgroundColor: colors.card,
+      borderRadius: 6,
+      padding: 12,
+      paddingBottom: 40,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.18,
+      shadowRadius: 12,
+    },
+    cardImage: {
+      flex: 1,
+      width: '100%',
+      backgroundColor: colors.primaryLight,
+    },
+    cardCaption: {
+      position: 'absolute',
+      bottom: 8,
+      left: 0,
+      right: 0,
+      alignItems: 'center',
+    },
+    cardCaptionText: {
+      fontSize: typography.size.sm,
+      color: colors.textSecondary,
+      fontStyle: 'italic',
+    },
+    dots: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      marginTop: spacing.md,
+    },
+    dot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: colors.border,
+      marginHorizontal: 4,
+    },
+    dotActive: {
+      width: 22,
+      backgroundColor: colors.primary,
+    },
+    captionWrap: {
+      marginTop: spacing.xl,
+    },
+    title: {
+      fontSize: 32,
+      fontWeight: typography.weight.bold,
+      color: colors.textPrimary,
+      lineHeight: 38,
+      letterSpacing: -0.5,
+    },
+    subtitle: {
+      fontSize: typography.size.md,
+      color: colors.textSecondary,
+      marginTop: spacing.sm,
+    },
+    actions: {
+      marginTop: spacing.xl,
+    },
+  });
 
 export default WelcomeScreen;

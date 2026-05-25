@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { colors } from '../../theme/colors';
+import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 
@@ -22,6 +22,8 @@ const Input = ({
   leftIcon,
   style,
 }) => {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const [focused, setFocused] = useState(false);
   const [hidden, setHidden] = useState(secureTextEntry);
 
@@ -73,44 +75,45 @@ const Input = ({
   );
 };
 
-const styles = StyleSheet.create({
-  wrapper: {
-    marginBottom: spacing.lg,
-  },
-  label: {
-    fontSize: typography.size.sm,
-    fontWeight: typography.weight.medium,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 52,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    borderRadius: 14,
-    backgroundColor: colors.background,
-    paddingHorizontal: spacing.lg,
-  },
-  inputRowFocused: {
-    borderColor: colors.primary,
-    backgroundColor: colors.card,
-  },
-  leftIcon: {
-    marginRight: spacing.md,
-  },
-  rightIcon: {
-    marginLeft: spacing.sm,
-    padding: spacing.xs,
-  },
-  input: {
-    flex: 1,
-    height: '100%',
-    fontSize: typography.size.md,
-    color: colors.textPrimary,
-    padding: 0,
-  },
-});
+const makeStyles = (colors) =>
+  StyleSheet.create({
+    wrapper: {
+      marginBottom: spacing.lg,
+    },
+    label: {
+      fontSize: typography.size.sm,
+      fontWeight: typography.weight.medium,
+      color: colors.textSecondary,
+      marginBottom: spacing.xs,
+    },
+    inputRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      height: 52,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      borderRadius: 14,
+      backgroundColor: colors.inputBackground,
+      paddingHorizontal: spacing.lg,
+    },
+    inputRowFocused: {
+      borderColor: colors.primary,
+      backgroundColor: colors.card,
+    },
+    leftIcon: {
+      marginRight: spacing.md,
+    },
+    rightIcon: {
+      marginLeft: spacing.sm,
+      padding: spacing.xs,
+    },
+    input: {
+      flex: 1,
+      height: '100%',
+      fontSize: typography.size.md,
+      color: colors.textPrimary,
+      padding: 0,
+    },
+  });
 
 export default Input;

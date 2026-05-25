@@ -5,7 +5,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { colors } from '../../theme/colors';
+import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 
@@ -17,6 +17,8 @@ const Button = ({
   disabled = false,
   style,
 }) => {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const isOutline = variant === 'outline';
   return (
     <TouchableOpacity
@@ -46,35 +48,36 @@ const Button = ({
   );
 };
 
-const styles = StyleSheet.create({
-  base: {
-    height: 48,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.xl,
-  },
-  primary: {
-    backgroundColor: colors.primary,
-  },
-  outline: {
-    backgroundColor: 'transparent',
-    borderWidth: 1.5,
-    borderColor: colors.primary,
-  },
-  disabled: {
-    opacity: 0.5,
-  },
-  text: {
-    fontSize: typography.size.md,
-    fontWeight: typography.weight.bold,
-  },
-  textPrimary: {
-    color: '#FFFFFF',
-  },
-  textOutline: {
-    color: colors.primary,
-  },
-});
+const makeStyles = (colors) =>
+  StyleSheet.create({
+    base: {
+      height: 48,
+      borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: spacing.xl,
+    },
+    primary: {
+      backgroundColor: colors.primary,
+    },
+    outline: {
+      backgroundColor: 'transparent',
+      borderWidth: 1.5,
+      borderColor: colors.primary,
+    },
+    disabled: {
+      opacity: 0.5,
+    },
+    text: {
+      fontSize: typography.size.md,
+      fontWeight: typography.weight.bold,
+    },
+    textPrimary: {
+      color: '#FFFFFF',
+    },
+    textOutline: {
+      color: colors.primary,
+    },
+  });
 
 export default Button;

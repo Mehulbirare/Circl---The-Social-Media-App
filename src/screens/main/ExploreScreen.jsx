@@ -10,7 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Avatar from '../../components/common/Avatar';
-import { colors } from '../../theme/colors';
+import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 
@@ -24,6 +24,8 @@ const NEARBY = [
 ];
 
 const ExploreScreen = () => {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const [query, setQuery] = useState('');
   const [following, setFollowing] = useState({});
 
@@ -100,100 +102,101 @@ const ExploreScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  searchWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    paddingHorizontal: spacing.md,
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.md,
-  },
-  search: {
-    flex: 1,
-    height: 44,
-    marginLeft: spacing.sm,
-    color: colors.textPrimary,
-    fontSize: typography.size.md,
-  },
-  content: {
-    padding: spacing.lg,
-    paddingBottom: spacing.huge,
-  },
-  sectionTitle: {
-    fontSize: typography.size.lg,
-    fontWeight: typography.weight.bold,
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
-  },
-  sectionTitleSpaced: {
-    marginTop: spacing.xl,
-  },
-  pillsRow: {
-    paddingRight: spacing.lg,
-  },
-  pill: {
-    backgroundColor: colors.primaryLight,
-    borderRadius: 24,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    marginRight: spacing.sm,
-  },
-  pillText: {
-    color: colors.primary,
-    fontWeight: typography.weight.medium,
-    fontSize: typography.size.sm,
-  },
-  userCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  userInfo: {
-    flex: 1,
-    marginLeft: spacing.md,
-  },
-  userName: {
-    fontSize: typography.size.md,
-    fontWeight: typography.weight.bold,
-    color: colors.textPrimary,
-  },
-  userDist: {
-    fontSize: typography.size.sm,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  followBtn: {
-    backgroundColor: colors.primary,
-    borderRadius: 24,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-  },
-  followingBtn: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: colors.primary,
-  },
-  followText: {
-    color: '#FFFFFF',
-    fontWeight: typography.weight.bold,
-    fontSize: typography.size.sm,
-  },
-  followingText: {
-    color: colors.primary,
-  },
-});
+const makeStyles = (colors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    searchWrap: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      paddingHorizontal: spacing.md,
+      marginHorizontal: spacing.lg,
+      marginTop: spacing.md,
+    },
+    search: {
+      flex: 1,
+      height: 44,
+      marginLeft: spacing.sm,
+      color: colors.textPrimary,
+      fontSize: typography.size.md,
+    },
+    content: {
+      padding: spacing.lg,
+      paddingBottom: spacing.huge,
+    },
+    sectionTitle: {
+      fontSize: typography.size.lg,
+      fontWeight: typography.weight.bold,
+      color: colors.textPrimary,
+      marginBottom: spacing.md,
+    },
+    sectionTitleSpaced: {
+      marginTop: spacing.xl,
+    },
+    pillsRow: {
+      paddingRight: spacing.lg,
+    },
+    pill: {
+      backgroundColor: colors.primaryLight,
+      borderRadius: 24,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
+      marginRight: spacing.sm,
+    },
+    pillText: {
+      color: colors.primary,
+      fontWeight: typography.weight.medium,
+      fontSize: typography.size.sm,
+    },
+    userCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      padding: spacing.md,
+      marginBottom: spacing.sm,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    userInfo: {
+      flex: 1,
+      marginLeft: spacing.md,
+    },
+    userName: {
+      fontSize: typography.size.md,
+      fontWeight: typography.weight.bold,
+      color: colors.textPrimary,
+    },
+    userDist: {
+      fontSize: typography.size.sm,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    followBtn: {
+      backgroundColor: colors.primary,
+      borderRadius: 24,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm,
+    },
+    followingBtn: {
+      backgroundColor: 'transparent',
+      borderWidth: 1,
+      borderColor: colors.primary,
+    },
+    followText: {
+      color: '#FFFFFF',
+      fontWeight: typography.weight.bold,
+      fontSize: typography.size.sm,
+    },
+    followingText: {
+      color: colors.primary,
+    },
+  });
 
 export default ExploreScreen;

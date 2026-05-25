@@ -14,7 +14,7 @@ import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
 import { useAuthStore } from '../../store/useAuthStore';
 import { requestLocationPermission } from '../../utils/permissions';
-import { colors } from '../../theme/colors';
+import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 
@@ -25,6 +25,8 @@ const SOCIAL_PROVIDERS = [
 ];
 
 const SignupScreen = ({ navigation }) => {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -127,114 +129,115 @@ const SignupScreen = ({ navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  flex: { flex: 1 },
-  scroll: {
-    flexGrow: 1,
-    paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.xxl,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.card,
-    marginTop: spacing.sm,
-  },
-  illustration: {
-    alignItems: 'center',
-    marginTop: spacing.lg,
-  },
-  logoBadge: {
-    width: 80,
-    height: 80,
-    borderRadius: 24,
-    backgroundColor: colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  logoCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 5,
-    borderColor: colors.primary,
-  },
-  title: {
-    fontSize: typography.size.xxl,
-    fontWeight: typography.weight.bold,
-    color: colors.textPrimary,
-    textAlign: 'center',
-    marginTop: spacing.md,
-  },
-  subtitle: {
-    fontSize: typography.size.md,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginTop: spacing.xs,
-    marginBottom: spacing.lg,
-  },
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: 20,
-    padding: spacing.xl,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 3,
-  },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: spacing.lg,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.border,
-  },
-  dividerText: {
-    marginHorizontal: spacing.md,
-    color: colors.textSecondary,
-    fontSize: typography.size.sm,
-  },
-  socialRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginHorizontal: -spacing.xs,
-  },
-  socialBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    margin: spacing.xs,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: spacing.xl,
-  },
-  footerText: {
-    fontSize: typography.size.md,
-    color: colors.textSecondary,
-  },
-  footerLink: {
-    fontSize: typography.size.md,
-    color: colors.primary,
-    fontWeight: typography.weight.bold,
-  },
-});
+const makeStyles = (colors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    flex: { flex: 1 },
+    scroll: {
+      flexGrow: 1,
+      paddingHorizontal: spacing.xl,
+      paddingBottom: spacing.xxl,
+    },
+    backBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.card,
+      marginTop: spacing.sm,
+    },
+    illustration: {
+      alignItems: 'center',
+      marginTop: spacing.lg,
+    },
+    logoBadge: {
+      width: 80,
+      height: 80,
+      borderRadius: 24,
+      backgroundColor: colors.primaryLight,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    logoCircle: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      borderWidth: 5,
+      borderColor: colors.primary,
+    },
+    title: {
+      fontSize: typography.size.xxl,
+      fontWeight: typography.weight.bold,
+      color: colors.textPrimary,
+      textAlign: 'center',
+      marginTop: spacing.md,
+    },
+    subtitle: {
+      fontSize: typography.size.md,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginTop: spacing.xs,
+      marginBottom: spacing.lg,
+    },
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: 20,
+      padding: spacing.xl,
+      shadowColor: colors.shadow,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.06,
+      shadowRadius: 12,
+      elevation: 3,
+    },
+    dividerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginVertical: spacing.lg,
+    },
+    dividerLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: colors.border,
+    },
+    dividerText: {
+      marginHorizontal: spacing.md,
+      color: colors.textSecondary,
+      fontSize: typography.size.sm,
+    },
+    socialRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      marginHorizontal: -spacing.xs,
+    },
+    socialBtn: {
+      width: 52,
+      height: 52,
+      borderRadius: 14,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+      margin: spacing.xs,
+    },
+    footer: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      marginTop: spacing.xl,
+    },
+    footerText: {
+      fontSize: typography.size.md,
+      color: colors.textSecondary,
+    },
+    footerLink: {
+      fontSize: typography.size.md,
+      color: colors.primary,
+      fontWeight: typography.weight.bold,
+    },
+  });
 
 export default SignupScreen;

@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { colors } from '../../theme/colors';
+import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 
 const PostActions = ({ post, onLike }) => {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const [liked, setLiked] = useState(!!post.liked);
   const [likes, setLikes] = useState(post.likes ?? 0);
 
@@ -44,28 +46,29 @@ const PostActions = ({ post, onLike }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  item: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: spacing.xxl,
-  },
-  count: {
-    fontSize: typography.size.sm,
-    color: colors.textSecondary,
-    marginLeft: spacing.xs,
-    fontWeight: typography.weight.medium,
-  },
-  countActive: {
-    color: colors.danger,
-  },
-});
+const makeStyles = (colors) =>
+  StyleSheet.create({
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingTop: spacing.sm,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    item: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginRight: spacing.xxl,
+    },
+    count: {
+      fontSize: typography.size.sm,
+      color: colors.textSecondary,
+      marginLeft: spacing.xs,
+      fontWeight: typography.weight.medium,
+    },
+    countActive: {
+      color: colors.danger,
+    },
+  });
 
 export default PostActions;

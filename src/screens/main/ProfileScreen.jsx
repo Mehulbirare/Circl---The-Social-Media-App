@@ -13,7 +13,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import Avatar from '../../components/common/Avatar';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useLocationStore } from '../../store/useLocationStore';
-import { colors } from '../../theme/colors';
+import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 
@@ -49,6 +49,8 @@ const ACTION_CARDS = [
 ];
 
 const ProfileScreen = ({ navigation }) => {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const city = useLocationStore((s) => s.city);
@@ -57,6 +59,23 @@ const ProfileScreen = ({ navigation }) => {
   const bio =
     user?.bio || 'Building communities, one neighbourhood at a time.';
   const avatar = user?.avatar || null;
+
+  const Stat = ({ value, label }) => (
+    <View style={styles.stat}>
+      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statLabel}>{label}</Text>
+    </View>
+  );
+
+  const MenuRow = ({ icon, label, tint }) => (
+    <TouchableOpacity style={styles.menuRow} activeOpacity={0.7}>
+      <View style={[styles.menuIcon, { backgroundColor: tint + '1A' }]}>
+        <Icon name={icon} size={18} color={tint} />
+      </View>
+      <Text style={styles.menuLabel}>{label}</Text>
+      <Icon name="chevron-right" size={20} color={colors.textSecondary} />
+    </TouchableOpacity>
+  );
 
   return (
     <View style={styles.container}>
@@ -180,266 +199,250 @@ const ProfileScreen = ({ navigation }) => {
   );
 };
 
-const Stat = ({ value, label }) => (
-  <View style={styles.stat}>
-    <Text style={styles.statValue}>{value}</Text>
-    <Text style={styles.statLabel}>{label}</Text>
-  </View>
-);
-
-const MenuRow = ({ icon, label, tint }) => (
-  <TouchableOpacity style={styles.menuRow} activeOpacity={0.7}>
-    <View style={[styles.menuIcon, { backgroundColor: tint + '1A' }]}>
-      <Icon name={icon} size={18} color={tint} />
-    </View>
-    <Text style={styles.menuLabel}>{label}</Text>
-    <Icon name="chevron-right" size={20} color={colors.textSecondary} />
-  </TouchableOpacity>
-);
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scroll: {
-    paddingBottom: spacing.huge,
-  },
-  hero: {
-    paddingBottom: spacing.huge + spacing.xl,
-    borderBottomLeftRadius: 36,
-    borderBottomRightRadius: 36,
-  },
-  heroSafe: {
-    paddingHorizontal: spacing.xl,
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: spacing.sm,
-  },
-  topTitle: {
-    fontSize: typography.size.xl,
-    fontWeight: typography.weight.bold,
-    color: '#FFFFFF',
-    letterSpacing: -0.3,
-  },
-  iconBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  heroBody: {
-    alignItems: 'center',
-    marginTop: spacing.xl,
-  },
-  avatarRing: {
-    width: 116,
-    height: 116,
-    borderRadius: 58,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-  },
-  avatarInner: {
-    width: 104,
-    height: 104,
-    borderRadius: 52,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 3,
-    borderColor: '#FFFFFF',
-  },
-  name: {
-    marginTop: spacing.md,
-    fontSize: 24,
-    fontWeight: typography.weight.bold,
-    color: '#FFFFFF',
-    letterSpacing: -0.3,
-  },
-  locPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 999,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 4,
-    marginTop: spacing.sm,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
-  },
-  locText: {
-    color: '#FFFFFF',
-    fontSize: typography.size.sm,
-    marginLeft: 4,
-    fontWeight: typography.weight.medium,
-  },
-  bio: {
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: typography.size.md,
-    marginTop: spacing.md,
-    textAlign: 'center',
-    paddingHorizontal: spacing.lg,
-    lineHeight: 20,
-  },
-  statsCardWrap: {
-    marginTop: -spacing.xl - spacing.lg,
-    paddingHorizontal: spacing.xl,
-  },
-  statsCard: {
-    flexDirection: 'row',
-    backgroundColor: colors.card,
-    borderRadius: 18,
-    paddingVertical: spacing.lg,
-    shadowColor: '#0E7A57',
-    shadowOpacity: 0.18,
-    shadowOffset: { width: 0, height: 8 },
-    shadowRadius: 18,
-    elevation: 6,
-  },
-  stat: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statDivider: {
-    width: 1,
-    backgroundColor: colors.border,
-  },
-  statValue: {
-    fontSize: 20,
-    fontWeight: typography.weight.bold,
-    color: colors.textPrimary,
-    letterSpacing: -0.3,
-  },
-  statLabel: {
-    fontSize: typography.size.sm,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  body: {
-    paddingHorizontal: spacing.xl,
-    marginTop: spacing.xl,
-  },
-  editBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.md + 2,
-    borderRadius: 14,
-    shadowColor: '#1D9E75',
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 10,
-    elevation: 4,
-  },
-  editText: {
-    color: '#FFFFFF',
-    fontSize: typography.size.md,
-    fontWeight: typography.weight.bold,
-    marginLeft: spacing.sm,
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginTop: spacing.lg,
-  },
-  actionShadow: {
-    width: '48.5%',
-    marginBottom: spacing.md,
-    borderRadius: 18,
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowOffset: { width: 0, height: 6 },
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  actionCard: {
-    borderRadius: 18,
-    padding: spacing.lg,
-    minHeight: 120,
-    justifyContent: 'space-between',
-  },
-  actionIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionValue: {
-    marginTop: spacing.md,
-    fontSize: 22,
-    fontWeight: typography.weight.bold,
-    color: '#FFFFFF',
-    letterSpacing: -0.3,
-  },
-  actionLabel: {
-    fontSize: typography.size.sm,
-    color: 'rgba(255,255,255,0.9)',
-    marginTop: 2,
-  },
-  menuCard: {
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    marginTop: spacing.sm,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  menuRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md + 2,
-  },
-  menuIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.md,
-  },
-  menuLabel: {
-    flex: 1,
-    fontSize: typography.size.md,
-    color: colors.textPrimary,
-    fontWeight: typography.weight.medium,
-  },
-  menuDivider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginLeft: spacing.lg + 36 + spacing.md,
-  },
-  logoutBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: spacing.lg,
-    paddingVertical: spacing.md + 2,
-    borderRadius: 14,
-    backgroundColor: '#FEE2E2',
-  },
-  logoutText: {
-    fontSize: typography.size.md,
-    fontWeight: typography.weight.bold,
-    color: colors.danger,
-    marginLeft: spacing.sm,
-  },
-});
+const makeStyles = (colors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    scroll: {
+      paddingBottom: spacing.huge,
+    },
+    hero: {
+      paddingBottom: spacing.huge + spacing.xl,
+      borderBottomLeftRadius: 36,
+      borderBottomRightRadius: 36,
+    },
+    heroSafe: {
+      paddingHorizontal: spacing.xl,
+    },
+    topBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingTop: spacing.sm,
+    },
+    topTitle: {
+      fontSize: typography.size.xl,
+      fontWeight: typography.weight.bold,
+      color: '#FFFFFF',
+      letterSpacing: -0.3,
+    },
+    iconBtn: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      backgroundColor: 'rgba(255,255,255,0.2)',
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.25)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    heroBody: {
+      alignItems: 'center',
+      marginTop: spacing.xl,
+    },
+    avatarRing: {
+      width: 116,
+      height: 116,
+      borderRadius: 58,
+      backgroundColor: 'rgba(255,255,255,0.15)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.3)',
+    },
+    avatarInner: {
+      width: 104,
+      height: 104,
+      borderRadius: 52,
+      backgroundColor: 'rgba(255,255,255,0.25)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 3,
+      borderColor: '#FFFFFF',
+    },
+    name: {
+      marginTop: spacing.md,
+      fontSize: 24,
+      fontWeight: typography.weight.bold,
+      color: '#FFFFFF',
+      letterSpacing: -0.3,
+    },
+    locPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: 'rgba(255,255,255,0.2)',
+      borderRadius: 999,
+      paddingHorizontal: spacing.md,
+      paddingVertical: 4,
+      marginTop: spacing.sm,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.25)',
+    },
+    locText: {
+      color: '#FFFFFF',
+      fontSize: typography.size.sm,
+      marginLeft: 4,
+      fontWeight: typography.weight.medium,
+    },
+    bio: {
+      color: 'rgba(255,255,255,0.85)',
+      fontSize: typography.size.md,
+      marginTop: spacing.md,
+      textAlign: 'center',
+      paddingHorizontal: spacing.lg,
+      lineHeight: 20,
+    },
+    statsCardWrap: {
+      marginTop: -spacing.xl - spacing.lg,
+      paddingHorizontal: spacing.xl,
+    },
+    statsCard: {
+      flexDirection: 'row',
+      backgroundColor: colors.card,
+      borderRadius: 18,
+      paddingVertical: spacing.lg,
+      shadowColor: '#0E7A57',
+      shadowOpacity: 0.18,
+      shadowOffset: { width: 0, height: 8 },
+      shadowRadius: 18,
+      elevation: 6,
+    },
+    stat: {
+      flex: 1,
+      alignItems: 'center',
+    },
+    statDivider: {
+      width: 1,
+      backgroundColor: colors.border,
+    },
+    statValue: {
+      fontSize: 20,
+      fontWeight: typography.weight.bold,
+      color: colors.textPrimary,
+      letterSpacing: -0.3,
+    },
+    statLabel: {
+      fontSize: typography.size.sm,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    body: {
+      paddingHorizontal: spacing.xl,
+      marginTop: spacing.xl,
+    },
+    editBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: spacing.md + 2,
+      borderRadius: 14,
+      shadowColor: '#1D9E75',
+      shadowOpacity: 0.3,
+      shadowOffset: { width: 0, height: 6 },
+      shadowRadius: 10,
+      elevation: 4,
+    },
+    editText: {
+      color: '#FFFFFF',
+      fontSize: typography.size.md,
+      fontWeight: typography.weight.bold,
+      marginLeft: spacing.sm,
+    },
+    grid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      marginTop: spacing.lg,
+    },
+    actionShadow: {
+      width: '48.5%',
+      marginBottom: spacing.md,
+      borderRadius: 18,
+      shadowColor: colors.shadow,
+      shadowOpacity: 0.12,
+      shadowOffset: { width: 0, height: 6 },
+      shadowRadius: 10,
+      elevation: 3,
+    },
+    actionCard: {
+      borderRadius: 18,
+      padding: spacing.lg,
+      minHeight: 120,
+      justifyContent: 'space-between',
+    },
+    actionIcon: {
+      width: 38,
+      height: 38,
+      borderRadius: 12,
+      backgroundColor: 'rgba(255,255,255,0.25)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    actionValue: {
+      marginTop: spacing.md,
+      fontSize: 22,
+      fontWeight: typography.weight.bold,
+      color: '#FFFFFF',
+      letterSpacing: -0.3,
+    },
+    actionLabel: {
+      fontSize: typography.size.sm,
+      color: 'rgba(255,255,255,0.9)',
+      marginTop: 2,
+    },
+    menuCard: {
+      backgroundColor: colors.card,
+      borderRadius: 16,
+      marginTop: spacing.sm,
+      overflow: 'hidden',
+      shadowColor: colors.shadow,
+      shadowOpacity: 0.05,
+      shadowOffset: { width: 0, height: 2 },
+      shadowRadius: 8,
+      elevation: 2,
+    },
+    menuRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md + 2,
+    },
+    menuIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: spacing.md,
+    },
+    menuLabel: {
+      flex: 1,
+      fontSize: typography.size.md,
+      color: colors.textPrimary,
+      fontWeight: typography.weight.medium,
+    },
+    menuDivider: {
+      height: 1,
+      backgroundColor: colors.border,
+      marginLeft: spacing.lg + 36 + spacing.md,
+    },
+    logoutBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: spacing.lg,
+      paddingVertical: spacing.md + 2,
+      borderRadius: 14,
+      backgroundColor: colors.logoutBackground,
+    },
+    logoutText: {
+      fontSize: typography.size.md,
+      fontWeight: typography.weight.bold,
+      color: colors.danger,
+      marginLeft: spacing.sm,
+    },
+  });
 
 export default ProfileScreen;

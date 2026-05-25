@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import FeedList from '../../components/feed/FeedList';
 import { useLocationStore } from '../../store/useLocationStore';
-import { colors } from '../../theme/colors';
+import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 
@@ -59,6 +59,8 @@ const MOCK_POSTS = [
 ];
 
 const HomeScreen = ({ navigation }) => {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const city = useLocationStore((s) => s.city);
   const region = useLocationStore((s) => s.region);
   const [refreshing, setRefreshing] = useState(false);
@@ -97,61 +99,62 @@ const HomeScreen = ({ navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  logoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  circle: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 3,
-    borderColor: colors.primary,
-    marginRight: spacing.sm,
-  },
-  logo: {
-    fontSize: typography.size.xl,
-    fontWeight: typography.weight.bold,
-    color: colors.primary,
-  },
-  bell: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  locationRow: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
-  },
-  pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: colors.primaryLight,
-    borderRadius: 24,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-  },
-  pillText: {
-    color: colors.primary,
-    fontSize: typography.size.sm,
-    fontWeight: typography.weight.medium,
-    marginLeft: spacing.xs,
-  },
-});
+const makeStyles = (colors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+    },
+    logoRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    circle: {
+      width: 22,
+      height: 22,
+      borderRadius: 11,
+      borderWidth: 3,
+      borderColor: colors.primary,
+      marginRight: spacing.sm,
+    },
+    logo: {
+      fontSize: typography.size.xl,
+      fontWeight: typography.weight.bold,
+      color: colors.primary,
+    },
+    bell: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    locationRow: {
+      paddingHorizontal: spacing.lg,
+      paddingBottom: spacing.sm,
+    },
+    pill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      backgroundColor: colors.primaryLight,
+      borderRadius: 24,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+    },
+    pillText: {
+      color: colors.primary,
+      fontSize: typography.size.sm,
+      fontWeight: typography.weight.medium,
+      marginLeft: spacing.xs,
+    },
+  });
 
 export default HomeScreen;

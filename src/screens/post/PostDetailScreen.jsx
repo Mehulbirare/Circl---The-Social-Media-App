@@ -10,7 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Avatar from '../../components/common/Avatar';
 import PostActions from '../../components/feed/PostActions';
-import { colors } from '../../theme/colors';
+import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 
@@ -36,6 +36,8 @@ const MOCK_COMMENTS = [
 ];
 
 const PostDetailScreen = ({ route, navigation }) => {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const post = route?.params?.post || {
     id: '0',
     author: 'Anaya Shah',
@@ -91,93 +93,94 @@ const PostDetailScreen = ({ route, navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  backBtn: {
-    width: 24,
-  },
-  headerTitle: {
-    fontSize: typography.size.lg,
-    fontWeight: typography.weight.bold,
-    color: colors.textPrimary,
-  },
-  scroll: {
-    padding: spacing.lg,
-    paddingBottom: spacing.huge,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  headerText: {
-    marginLeft: spacing.md,
-  },
-  name: {
-    fontSize: typography.size.md,
-    fontWeight: typography.weight.bold,
-    color: colors.textPrimary,
-  },
-  meta: {
-    fontSize: typography.size.sm,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  body: {
-    fontSize: typography.size.lg,
-    color: colors.textPrimary,
-    lineHeight: 26,
-    marginBottom: spacing.lg,
-  },
-  imagePlaceholder: {
-    height: 220,
-    backgroundColor: colors.primaryLight,
-    borderRadius: 12,
-    marginBottom: spacing.lg,
-  },
-  commentsTitle: {
-    fontSize: typography.size.lg,
-    fontWeight: typography.weight.bold,
-    color: colors.textPrimary,
-    marginTop: spacing.xl,
-    marginBottom: spacing.sm,
-  },
-  comment: {
-    flexDirection: 'row',
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  commentBody: {
-    flex: 1,
-    marginLeft: spacing.md,
-  },
-  commentAuthor: {
-    fontSize: typography.size.sm,
-    fontWeight: typography.weight.bold,
-    color: colors.textPrimary,
-  },
-  commentText: {
-    fontSize: typography.size.md,
-    color: colors.textPrimary,
-    marginTop: 2,
-    lineHeight: 20,
-  },
-  commentTime: {
-    fontSize: typography.size.xs,
-    color: colors.textSecondary,
-    marginTop: spacing.xs,
-  },
-});
+const makeStyles = (colors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+    },
+    backBtn: {
+      width: 24,
+    },
+    headerTitle: {
+      fontSize: typography.size.lg,
+      fontWeight: typography.weight.bold,
+      color: colors.textPrimary,
+    },
+    scroll: {
+      padding: spacing.lg,
+      paddingBottom: spacing.huge,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: spacing.md,
+    },
+    headerText: {
+      marginLeft: spacing.md,
+    },
+    name: {
+      fontSize: typography.size.md,
+      fontWeight: typography.weight.bold,
+      color: colors.textPrimary,
+    },
+    meta: {
+      fontSize: typography.size.sm,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    body: {
+      fontSize: typography.size.lg,
+      color: colors.textPrimary,
+      lineHeight: 26,
+      marginBottom: spacing.lg,
+    },
+    imagePlaceholder: {
+      height: 220,
+      backgroundColor: colors.primaryLight,
+      borderRadius: 12,
+      marginBottom: spacing.lg,
+    },
+    commentsTitle: {
+      fontSize: typography.size.lg,
+      fontWeight: typography.weight.bold,
+      color: colors.textPrimary,
+      marginTop: spacing.xl,
+      marginBottom: spacing.sm,
+    },
+    comment: {
+      flexDirection: 'row',
+      paddingVertical: spacing.md,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    commentBody: {
+      flex: 1,
+      marginLeft: spacing.md,
+    },
+    commentAuthor: {
+      fontSize: typography.size.sm,
+      fontWeight: typography.weight.bold,
+      color: colors.textPrimary,
+    },
+    commentText: {
+      fontSize: typography.size.md,
+      color: colors.textPrimary,
+      marginTop: 2,
+      lineHeight: 20,
+    },
+    commentTime: {
+      fontSize: typography.size.xs,
+      color: colors.textSecondary,
+      marginTop: spacing.xs,
+    },
+  });
 
 export default PostDetailScreen;

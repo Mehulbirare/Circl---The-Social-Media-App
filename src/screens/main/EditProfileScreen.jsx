@@ -15,11 +15,13 @@ import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Avatar from '../../components/common/Avatar';
 import { useAuthStore } from '../../store/useAuthStore';
-import { colors } from '../../theme/colors';
+import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 
 const EditProfileScreen = ({ navigation }) => {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const user = useAuthStore((s) => s.user);
   const updateUser = useAuthStore((s) => s.updateUser);
 
@@ -98,6 +100,40 @@ const EditProfileScreen = ({ navigation }) => {
           year: 'numeric',
         })
       : '';
+
+  const Field = ({ label, rightIcon, ...inputProps }) => (
+    <View style={styles.field}>
+      <Text style={styles.label}>{label}</Text>
+      <View style={styles.inputWrap}>
+        <TextInput
+          style={styles.input}
+          placeholderTextColor={colors.textSecondary}
+          {...inputProps}
+        />
+        {rightIcon && (
+          <Icon
+            name={rightIcon}
+            size={18}
+            color={colors.textSecondary}
+            style={styles.inputIcon}
+          />
+        )}
+      </View>
+    </View>
+  );
+
+  const GenderOption = ({ label, selected, onPress }) => (
+    <TouchableOpacity
+      style={[styles.genderOption, selected && styles.genderOptionSelected]}
+      onPress={onPress}
+      activeOpacity={0.85}
+    >
+      <View style={[styles.radio, selected && styles.radioSelected]}>
+        {selected && <View style={styles.radioDot} />}
+      </View>
+      <Text style={styles.genderLabel}>{label}</Text>
+    </TouchableOpacity>
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -225,176 +261,143 @@ const EditProfileScreen = ({ navigation }) => {
   );
 };
 
-const Field = ({ label, rightIcon, ...inputProps }) => (
-  <View style={styles.field}>
-    <Text style={styles.label}>{label}</Text>
-    <View style={styles.inputWrap}>
-      <TextInput
-        style={styles.input}
-        placeholderTextColor={colors.textSecondary}
-        {...inputProps}
-      />
-      {rightIcon && (
-        <Icon
-          name={rightIcon}
-          size={18}
-          color={colors.textSecondary}
-          style={styles.inputIcon}
-        />
-      )}
-    </View>
-  </View>
-);
-
-const GenderOption = ({ label, selected, onPress }) => (
-  <TouchableOpacity
-    style={[styles.genderOption, selected && styles.genderOptionSelected]}
-    onPress={onPress}
-    activeOpacity={0.85}
-  >
-    <View style={[styles.radio, selected && styles.radioSelected]}>
-      {selected && <View style={styles.radioDot} />}
-    </View>
-    <Text style={styles.genderLabel}>{label}</Text>
-  </TouchableOpacity>
-);
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.card,
-  },
-  topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-  },
-  topTitle: {
-    fontSize: typography.size.lg,
-    fontWeight: typography.weight.bold,
-    color: colors.textPrimary,
-  },
-  scroll: {
-    paddingHorizontal: spacing.xl,
-    paddingBottom: spacing.huge,
-  },
-  avatarSection: {
-    alignItems: 'center',
-    marginTop: spacing.md,
-    marginBottom: spacing.xl,
-  },
-  cameraBadge: {
-    position: 'absolute',
-    bottom: -2,
-    right: -2,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: colors.primaryLight,
-    borderWidth: 3,
-    borderColor: colors.card,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sectionTitle: {
-    fontSize: typography.size.lg,
-    fontWeight: typography.weight.bold,
-    color: colors.textPrimary,
-    marginTop: spacing.md,
-    marginBottom: spacing.md,
-  },
-  field: {
-    marginBottom: spacing.lg,
-  },
-  label: {
-    fontSize: typography.size.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.sm,
-  },
-  inputWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.lg,
-  },
-  input: {
-    flex: 1,
-    paddingVertical: spacing.md + 2,
-    fontSize: typography.size.md,
-    color: colors.textPrimary,
-  },
-  inputText: {
-    paddingVertical: spacing.md + 4,
-  },
-  inputIcon: {
-    marginLeft: spacing.sm,
-  },
-  genderRow: {
-    flexDirection: 'row',
-    marginBottom: spacing.lg,
-  },
-  genderOption: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.md + 2,
-    paddingHorizontal: spacing.lg,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
-  },
-  genderOptionSelected: {
-    borderColor: colors.primary,
-  },
-  radio: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    marginRight: spacing.sm,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  radioSelected: {
-    borderColor: colors.primary,
-  },
-  radioDot: {
-    width: 9,
-    height: 9,
-    borderRadius: 4.5,
-    backgroundColor: colors.primary,
-  },
-  genderLabel: {
-    fontSize: typography.size.md,
-    color: colors.textPrimary,
-  },
-  footer: {
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    backgroundColor: colors.card,
-  },
-  saveBtn: {
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  saveText: {
-    color: '#FFFFFF',
-    fontSize: typography.size.md,
-    fontWeight: typography.weight.bold,
-  },
-});
+const makeStyles = (colors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.card,
+    },
+    topBar: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.xl,
+      paddingVertical: spacing.md,
+    },
+    topTitle: {
+      fontSize: typography.size.lg,
+      fontWeight: typography.weight.bold,
+      color: colors.textPrimary,
+    },
+    scroll: {
+      paddingHorizontal: spacing.xl,
+      paddingBottom: spacing.huge,
+    },
+    avatarSection: {
+      alignItems: 'center',
+      marginTop: spacing.md,
+      marginBottom: spacing.xl,
+    },
+    cameraBadge: {
+      position: 'absolute',
+      bottom: -2,
+      right: -2,
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      backgroundColor: colors.primaryLight,
+      borderWidth: 3,
+      borderColor: colors.card,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    sectionTitle: {
+      fontSize: typography.size.lg,
+      fontWeight: typography.weight.bold,
+      color: colors.textPrimary,
+      marginTop: spacing.md,
+      marginBottom: spacing.md,
+    },
+    field: {
+      marginBottom: spacing.lg,
+    },
+    label: {
+      fontSize: typography.size.sm,
+      color: colors.textSecondary,
+      marginBottom: spacing.sm,
+    },
+    inputWrap: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: spacing.lg,
+    },
+    input: {
+      flex: 1,
+      paddingVertical: spacing.md + 2,
+      fontSize: typography.size.md,
+      color: colors.textPrimary,
+    },
+    inputText: {
+      paddingVertical: spacing.md + 4,
+    },
+    inputIcon: {
+      marginLeft: spacing.sm,
+    },
+    genderRow: {
+      flexDirection: 'row',
+      marginBottom: spacing.lg,
+    },
+    genderOption: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: spacing.md + 2,
+      paddingHorizontal: spacing.lg,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+    },
+    genderOptionSelected: {
+      borderColor: colors.primary,
+    },
+    radio: {
+      width: 18,
+      height: 18,
+      borderRadius: 9,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      marginRight: spacing.sm,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    radioSelected: {
+      borderColor: colors.primary,
+    },
+    radioDot: {
+      width: 9,
+      height: 9,
+      borderRadius: 4.5,
+      backgroundColor: colors.primary,
+    },
+    genderLabel: {
+      fontSize: typography.size.md,
+      color: colors.textPrimary,
+    },
+    footer: {
+      paddingHorizontal: spacing.xl,
+      paddingTop: spacing.md,
+      paddingBottom: spacing.md,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      backgroundColor: colors.card,
+    },
+    saveBtn: {
+      height: 52,
+      borderRadius: 26,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    saveText: {
+      color: '#FFFFFF',
+      fontSize: typography.size.md,
+      fontWeight: typography.weight.bold,
+    },
+  });
 
 export default EditProfileScreen;

@@ -11,19 +11,23 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useAuthStore } from '../../store/useAuthStore';
-import { colors } from '../../theme/colors';
+import { useThemeStore } from '../../store/useThemeStore';
+import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 
 const APP_VERSION = '1.0.0';
 
 const SettingsScreen = ({ navigation }) => {
+  const colors = useColors();
+  const styles = useThemedStyles(makeStyles);
   const logout = useAuthStore((s) => s.logout);
   const user = useAuthStore((s) => s.user);
+  const isDark = useThemeStore((s) => s.isDark);
+  const setDark = useThemeStore((s) => s.setDark);
 
   const [pushEnabled, setPushEnabled] = useState(true);
   const [emailEnabled, setEmailEnabled] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
   const [privateAccount, setPrivateAccount] = useState(false);
   const [showActivity, setShowActivity] = useState(true);
 
@@ -33,6 +37,46 @@ const SettingsScreen = ({ navigation }) => {
       { text: 'Log out', style: 'destructive', onPress: logout },
     ]);
   };
+
+  const Section = ({ title, children }) => (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      <View style={styles.card}>{children}</View>
+    </View>
+  );
+
+  const NavRow = ({ icon, tint, label, sublabel, onPress }) => (
+    <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7}>
+      <View style={[styles.rowIcon, { backgroundColor: tint + '1A' }]}>
+        <Icon name={icon} size={18} color={tint} />
+      </View>
+      <View style={styles.rowBody}>
+        <Text style={styles.rowLabel}>{label}</Text>
+        {sublabel ? <Text style={styles.rowSublabel}>{sublabel}</Text> : null}
+      </View>
+      <Icon name="chevron-right" size={20} color={colors.textSecondary} />
+    </TouchableOpacity>
+  );
+
+  const ToggleRow = ({ icon, tint, label, sublabel, value, onValueChange }) => (
+    <View style={styles.row}>
+      <View style={[styles.rowIcon, { backgroundColor: tint + '1A' }]}>
+        <Icon name={icon} size={18} color={tint} />
+      </View>
+      <View style={styles.rowBody}>
+        <Text style={styles.rowLabel}>{label}</Text>
+        {sublabel ? <Text style={styles.rowSublabel}>{sublabel}</Text> : null}
+      </View>
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+        trackColor={{ false: colors.border, true: colors.primary }}
+        thumbColor="#FFFFFF"
+      />
+    </View>
+  );
+
+  const Divider = () => <View style={styles.divider} />;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -104,9 +148,9 @@ const SettingsScreen = ({ navigation }) => {
             icon="theme-light-dark"
             tint="#6366F1"
             label="Dark mode"
-            sublabel="Coming soon"
-            value={darkMode}
-            onValueChange={setDarkMode}
+            sublabel={isDark ? 'On' : 'Off'}
+            value={isDark}
+            onValueChange={setDark}
           />
         </Section>
 
@@ -198,159 +242,120 @@ const SettingsScreen = ({ navigation }) => {
   );
 };
 
-const Section = ({ title, children }) => (
-  <View style={styles.section}>
-    <Text style={styles.sectionTitle}>{title}</Text>
-    <View style={styles.card}>{children}</View>
-  </View>
-);
-
-const NavRow = ({ icon, tint, label, sublabel, onPress }) => (
-  <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7}>
-    <View style={[styles.rowIcon, { backgroundColor: tint + '1A' }]}>
-      <Icon name={icon} size={18} color={tint} />
-    </View>
-    <View style={styles.rowBody}>
-      <Text style={styles.rowLabel}>{label}</Text>
-      {sublabel ? <Text style={styles.rowSublabel}>{sublabel}</Text> : null}
-    </View>
-    <Icon name="chevron-right" size={20} color={colors.textSecondary} />
-  </TouchableOpacity>
-);
-
-const ToggleRow = ({ icon, tint, label, sublabel, value, onValueChange }) => (
-  <View style={styles.row}>
-    <View style={[styles.rowIcon, { backgroundColor: tint + '1A' }]}>
-      <Icon name={icon} size={18} color={tint} />
-    </View>
-    <View style={styles.rowBody}>
-      <Text style={styles.rowLabel}>{label}</Text>
-      {sublabel ? <Text style={styles.rowSublabel}>{sublabel}</Text> : null}
-    </View>
-    <Switch
-      value={value}
-      onValueChange={onValueChange}
-      trackColor={{ false: colors.border, true: colors.primary }}
-      thumbColor="#FFFFFF"
-    />
-  </View>
-);
-
-const Divider = () => <View style={styles.divider} />;
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  title: {
-    fontSize: typography.size.xl,
-    fontWeight: typography.weight.bold,
-    color: colors.textPrimary,
-  },
-  scroll: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-  },
-  section: {
-    marginTop: spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: typography.size.sm,
-    fontWeight: typography.weight.bold,
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-    marginBottom: spacing.sm,
-    marginLeft: spacing.xs,
-  },
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md + 2,
-  },
-  rowIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.md,
-  },
-  rowBody: {
-    flex: 1,
-  },
-  rowLabel: {
-    fontSize: typography.size.md,
-    color: colors.textPrimary,
-    fontWeight: typography.weight.medium,
-  },
-  rowSublabel: {
-    fontSize: typography.size.sm,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginLeft: spacing.lg + 36 + spacing.md,
-  },
-  aboutRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md + 2,
-  },
-  aboutLabel: {
-    fontSize: typography.size.md,
-    color: colors.textPrimary,
-    fontWeight: typography.weight.medium,
-  },
-  aboutValue: {
-    fontSize: typography.size.md,
-    color: colors.textSecondary,
-  },
-  logoutBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: spacing.xl,
-    paddingVertical: spacing.md + 2,
-    borderRadius: 14,
-    backgroundColor: '#FEE2E2',
-  },
-  logoutText: {
-    fontSize: typography.size.md,
-    fontWeight: typography.weight.bold,
-    color: colors.danger,
-    marginLeft: spacing.sm,
-  },
-});
+const makeStyles = (colors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md,
+    },
+    backBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    title: {
+      fontSize: typography.size.xl,
+      fontWeight: typography.weight.bold,
+      color: colors.textPrimary,
+    },
+    scroll: {
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.sm,
+    },
+    section: {
+      marginTop: spacing.lg,
+    },
+    sectionTitle: {
+      fontSize: typography.size.sm,
+      fontWeight: typography.weight.bold,
+      color: colors.textSecondary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.6,
+      marginBottom: spacing.sm,
+      marginLeft: spacing.xs,
+    },
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: 16,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md + 2,
+    },
+    rowIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: spacing.md,
+    },
+    rowBody: {
+      flex: 1,
+    },
+    rowLabel: {
+      fontSize: typography.size.md,
+      color: colors.textPrimary,
+      fontWeight: typography.weight.medium,
+    },
+    rowSublabel: {
+      fontSize: typography.size.sm,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    divider: {
+      height: 1,
+      backgroundColor: colors.border,
+      marginLeft: spacing.lg + 36 + spacing.md,
+    },
+    aboutRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.md + 2,
+    },
+    aboutLabel: {
+      fontSize: typography.size.md,
+      color: colors.textPrimary,
+      fontWeight: typography.weight.medium,
+    },
+    aboutValue: {
+      fontSize: typography.size.md,
+      color: colors.textSecondary,
+    },
+    logoutBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: spacing.xl,
+      paddingVertical: spacing.md + 2,
+      borderRadius: 14,
+      backgroundColor: colors.logoutBackground,
+    },
+    logoutText: {
+      fontSize: typography.size.md,
+      fontWeight: typography.weight.bold,
+      color: colors.danger,
+      marginLeft: spacing.sm,
+    },
+  });
 
 export default SettingsScreen;
