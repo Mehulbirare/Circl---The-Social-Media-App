@@ -8,6 +8,7 @@ import { useAuthStore } from '../store/useAuthStore';
 import { useColors } from '../theme/useColors';
 import AuthNavigator from './AuthNavigator';
 import MainNavigator from './MainNavigator';
+import { navigationRef } from './navigationRef';
 
 const AppNavigator = () => {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
@@ -27,7 +28,7 @@ const AppNavigator = () => {
   };
 
   return (
-    <NavigationContainer theme={navTheme}>
+    <NavigationContainer ref={navigationRef} theme={navTheme}>
       {isLoggedIn ? <MainNavigator /> : <AuthNavigator />}
     </NavigationContainer>
   );

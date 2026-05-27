@@ -68,3 +68,44 @@ export async function markRead(chatId) {
     .neq('sender_id', user.id)
     .eq('read', false);
 }
+
+// Subscribes to every INSERT on `messages` that this user is allowed to see
+// (Realtime respects RLS — the user only receives rows in chats they belong to).
+// Messages sent by the current user are filtered out client-side so the caller
+// only sees inbound messages.
+export function subscribeToInboundMessages(myId, onInsert) {
+  if (!myId) return () => {};
+  const channel = supabase
+    .channel(`inbound-messages-${myId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+      },
+      (payload) => {
+        const msg = payload?.new;
+        if (!msg || msg.sender_id === myId) return;
+        onInsert(msg);
+      },
+    )
+    .subscribe();
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}
+
+// Resolves enough information to render an in-app notification banner
+// for a freshly inserted message: the sender's profile and the chat id.
+export async function getMessageBannerInfo(msg) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, full_name, avatar_url')
+    .eq('id', msg.sender_id)
+    .maybeSingle();
+  if (error) {
+    return { chatId: msg.chat_id, text: msg.text, other: null };
+  }
+  return { chatId: msg.chat_id, text: msg.text, other: data || null };
+}

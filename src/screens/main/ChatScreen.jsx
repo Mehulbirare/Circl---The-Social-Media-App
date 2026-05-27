@@ -6,6 +6,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Avatar from '../../components/common/Avatar';
 import SkeletonChatRow from '../../components/skeleton/SkeletonChatRow';
 import { getChats } from '../../services/chatService';
+import { useChatStore } from '../../store/useChatStore';
 import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
@@ -28,6 +29,8 @@ const ChatScreen = ({ navigation }) => {
   const styles = useThemedStyles(makeStyles);
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
+  const bumpKey = useChatStore((s) => s.bumpKey);
+  const unreadByChat = useChatStore((s) => s.unreadByChat);
 
   const load = useCallback(async () => {
     const rows = await getChats();
@@ -42,7 +45,7 @@ const ChatScreen = ({ navigation }) => {
         setLoading(false);
       }
     })();
-  }, [load]);
+  }, [load, bumpKey]);
 
   useFocusEffect(
     useCallback(() => {
@@ -73,36 +76,49 @@ const ChatScreen = ({ navigation }) => {
               No conversations yet. Say hi to someone nearby.
             </Text>
           }
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.row}
-              activeOpacity={0.7}
-              onPress={() =>
-                navigation.navigate('ChatThread', {
-                  chatId: item.id,
-                  other: item.other,
-                })
-              }
-            >
-              <Avatar
-                name={item.other?.full_name || 'User'}
-                uri={item.other?.avatar_url}
-              />
-              <View style={styles.body}>
-                <View style={styles.topLine}>
-                  <Text style={styles.name} numberOfLines={1}>
-                    {item.other?.full_name || 'User'}
-                  </Text>
-                  <Text style={styles.time}>{formatRelative(item.updatedAt)}</Text>
+          renderItem={({ item }) => {
+            const unread = unreadByChat[item.id] || 0;
+            return (
+              <TouchableOpacity
+                style={styles.row}
+                activeOpacity={0.7}
+                onPress={() =>
+                  navigation.navigate('ChatThread', {
+                    chatId: item.id,
+                    other: item.other,
+                  })
+                }
+              >
+                <Avatar
+                  name={item.other?.full_name || 'User'}
+                  uri={item.other?.avatar_url}
+                />
+                <View style={styles.body}>
+                  <View style={styles.topLine}>
+                    <Text style={styles.name} numberOfLines={1}>
+                      {item.other?.full_name || 'User'}
+                    </Text>
+                    <Text style={styles.time}>{formatRelative(item.updatedAt)}</Text>
+                  </View>
+                  <View style={styles.bottomLine}>
+                    <Text
+                      style={[styles.message, unread > 0 && styles.messageUnread]}
+                      numberOfLines={1}
+                    >
+                      {item.lastMessage || 'Tap to start chatting'}
+                    </Text>
+                    {unread > 0 ? (
+                      <View style={styles.unreadBadge}>
+                        <Text style={styles.unreadText}>
+                          {unread > 9 ? '9+' : unread}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
                 </View>
-                <View style={styles.bottomLine}>
-                  <Text style={styles.message} numberOfLines={1}>
-                    {item.lastMessage || 'Tap to start chatting'}
-                  </Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          )}
+              </TouchableOpacity>
+            );
+          }}
         />
       )}
     </SafeAreaView>
@@ -186,6 +202,25 @@ const makeStyles = (colors) =>
       flex: 1,
       fontSize: typography.size.sm,
       color: colors.textSecondary,
+    },
+    messageUnread: {
+      color: colors.textPrimary,
+      fontWeight: typography.weight.medium,
+    },
+    unreadBadge: {
+      minWidth: 20,
+      height: 20,
+      borderRadius: 10,
+      paddingHorizontal: 6,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginLeft: spacing.sm,
+    },
+    unreadText: {
+      color: '#FFFFFF',
+      fontSize: typography.size.xs,
+      fontWeight: typography.weight.bold,
     },
   });
 

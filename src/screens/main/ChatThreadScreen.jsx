@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -11,10 +11,12 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Avatar from '../../components/common/Avatar';
 import { getMessages, sendMessage, markRead } from '../../services/chatService';
 import { supabase } from '../../lib/supabase';
+import { useChatStore } from '../../store/useChatStore';
 import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
@@ -28,6 +30,21 @@ const ChatThreadScreen = ({ route, navigation }) => {
   const [sending, setSending] = useState(false);
   const [myId, setMyId] = useState(null);
   const seen = useRef(new Set());
+  const setActiveChat = useChatStore((s) => s.setActiveChat);
+  const clearActiveChat = useChatStore((s) => s.clearActiveChat);
+  const markChatRead = useChatStore((s) => s.markChatRead);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!chatId) return undefined;
+      setActiveChat(chatId);
+      markRead(chatId);
+      markChatRead(chatId);
+      return () => {
+        clearActiveChat();
+      };
+    }, [chatId, setActiveChat, clearActiveChat, markChatRead]),
+  );
 
   useEffect(() => {
     let active = true;

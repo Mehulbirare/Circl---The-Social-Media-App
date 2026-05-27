@@ -1,4 +1,5 @@
 import React from 'react';
+import { View, StyleSheet } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import HomeScreen from '../screens/main/HomeScreen';
@@ -11,6 +12,8 @@ import EditProfileScreen from '../screens/main/EditProfileScreen';
 import SettingsScreen from '../screens/main/SettingsScreen';
 import PostDetailScreen from '../screens/post/PostDetailScreen';
 import BottomTabBar from '../components/navigation/BottomTabBar';
+import NotificationBanner from '../components/notifications/NotificationBanner';
+import { useGlobalChatSubscription } from '../hooks/useGlobalChatSubscription';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -28,14 +31,24 @@ const Tabs = () => (
   </Tab.Navigator>
 );
 
-const MainNavigator = () => (
-  <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="Tabs" component={Tabs} />
-    <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-    <Stack.Screen name="Settings" component={SettingsScreen} />
-    <Stack.Screen name="PostDetail" component={PostDetailScreen} />
-    <Stack.Screen name="ChatThread" component={ChatThreadScreen} />
-  </Stack.Navigator>
-);
+const MainNavigator = () => {
+  useGlobalChatSubscription();
+  return (
+    <View style={styles.root}>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Tabs" component={Tabs} />
+        <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+        <Stack.Screen name="Settings" component={SettingsScreen} />
+        <Stack.Screen name="PostDetail" component={PostDetailScreen} />
+        <Stack.Screen name="ChatThread" component={ChatThreadScreen} />
+      </Stack.Navigator>
+      <NotificationBanner />
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+});
 
 export default MainNavigator;
