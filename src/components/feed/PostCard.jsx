@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Avatar from '../common/Avatar';
 import PostActions from './PostActions';
+import { thumbnailUrlForVideoUrl } from '../../services/imageService';
 import { useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
@@ -11,8 +12,11 @@ const isVideoUrl = (url) => /\.(mp4|mov|m4v|webm|3gp)(\?|$)/i.test(url || '');
 
 const PostCard = ({ post, onPress, onLike }) => {
   const styles = useThemedStyles(makeStyles);
+  const [thumbFailed, setThumbFailed] = useState(false);
   const mediaUrl = post.imageUrl;
   const showVideo = mediaUrl && isVideoUrl(mediaUrl);
+  const thumbUrl = showVideo ? thumbnailUrlForVideoUrl(mediaUrl) : null;
+
   return (
     <TouchableOpacity
       style={styles.card}
@@ -36,8 +40,16 @@ const PostCard = ({ post, onPress, onLike }) => {
         <View style={styles.mediaWrap}>
           {showVideo ? (
             <View style={styles.videoBox}>
-              <Icon name="play-circle" size={56} color="#FFFFFF" />
-              <Text style={styles.videoLabel}>Video</Text>
+              {thumbUrl && !thumbFailed ? (
+                <Image
+                  source={{ uri: thumbUrl }}
+                  style={styles.media}
+                  onError={() => setThumbFailed(true)}
+                />
+              ) : null}
+              <View style={styles.videoOverlay} pointerEvents="none">
+                <Icon name="play-circle" size={56} color="#FFFFFF" />
+              </View>
             </View>
           ) : (
             <Image source={{ uri: mediaUrl }} style={styles.media} />
@@ -115,14 +127,16 @@ const makeStyles = (colors) =>
       width: '100%',
       height: 220,
       backgroundColor: '#000',
+      position: 'relative',
+    },
+    videoOverlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
       alignItems: 'center',
       justifyContent: 'center',
-    },
-    videoLabel: {
-      color: '#FFFFFF',
-      marginTop: spacing.xs,
-      fontSize: typography.size.sm,
-      fontWeight: typography.weight.medium,
     },
   });
 

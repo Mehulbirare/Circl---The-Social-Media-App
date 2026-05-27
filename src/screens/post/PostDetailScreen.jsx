@@ -23,6 +23,7 @@ import {
   toggleLike,
   addComment,
 } from '../../services/postsService';
+import { thumbnailUrlForVideoUrl } from '../../services/imageService';
 import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
@@ -52,6 +53,7 @@ const PostDetailScreen = ({ route, navigation }) => {
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [thumbFailed, setThumbFailed] = useState(false);
 
   useEffect(() => {
     if (!postId) return undefined;
@@ -149,8 +151,17 @@ const PostDetailScreen = ({ route, navigation }) => {
               <View style={styles.mediaWrap}>
                 {/\.(mp4|mov|m4v|webm|3gp)(\?|$)/i.test(post.imageUrl) ? (
                   <View style={styles.videoBox}>
-                    <Icon name="play-circle" size={64} color="#FFFFFF" />
-                    <Text style={styles.videoLabel}>Video</Text>
+                    {!thumbFailed ? (
+                      <Image
+                        source={{ uri: thumbnailUrlForVideoUrl(post.imageUrl) }}
+                        style={styles.media}
+                        onError={() => setThumbFailed(true)}
+                        resizeMode="cover"
+                      />
+                    ) : null}
+                    <View style={styles.videoOverlay} pointerEvents="none">
+                      <Icon name="play-circle" size={64} color="#FFFFFF" />
+                    </View>
                   </View>
                 ) : (
                   <Image
@@ -277,14 +288,16 @@ const makeStyles = (colors) =>
       width: '100%',
       height: 260,
       backgroundColor: '#000',
+      position: 'relative',
+    },
+    videoOverlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
       alignItems: 'center',
       justifyContent: 'center',
-    },
-    videoLabel: {
-      color: '#FFFFFF',
-      marginTop: spacing.xs,
-      fontSize: typography.size.sm,
-      fontWeight: typography.weight.medium,
     },
     commentsTitle: {
       fontSize: typography.size.lg,
