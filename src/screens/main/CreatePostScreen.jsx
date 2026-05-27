@@ -9,25 +9,65 @@ import {
   Platform,
   Image,
   Alert,
+  PermissionsAndroid,
+  ActionSheetIOS,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { launchImageLibrary } from 'react-native-image-picker';
+import {
+  launchImageLibrary,
+  launchCamera,
+} from 'react-native-image-picker';
 import Button from '../../components/common/Button';
 import { usePostStore } from '../../store/usePostStore';
 import { useLocationStore } from '../../store/useLocationStore';
 import { createPost } from '../../services/postsService';
-import { uploadPostImage } from '../../services/imageService';
+import { uploadPostMedia } from '../../services/imageService';
 import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 import { MAX_POST_LENGTH } from '../../constants/config';
 
+const MAX_VIDEO_SECONDS = 60;
+
+const ensureAndroidMediaPermission = async (kind) => {
+  if (Platform.OS !== 'android') return true;
+  const sdk = Platform.Version;
+  // API 33+ uses granular READ_MEDIA_* permissions. Older versions use READ_EXTERNAL_STORAGE.
+  if (sdk >= 33) {
+    const perm =
+      kind === 'video'
+        ? PermissionsAndroid.PERMISSIONS.READ_MEDIA_VIDEO
+        : PermissionsAndroid.PERMISSIONS.READ_MEDIA_IMAGES;
+    const result = await PermissionsAndroid.request(perm);
+    return result === PermissionsAndroid.RESULTS.GRANTED;
+  }
+  const result = await PermissionsAndroid.request(
+    PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
+  );
+  return result === PermissionsAndroid.RESULTS.GRANTED;
+};
+
+const ensureAndroidCameraPermission = async (forVideo) => {
+  if (Platform.OS !== 'android') return true;
+  const camera = await PermissionsAndroid.request(
+    PermissionsAndroid.PERMISSIONS.CAMERA,
+  );
+  if (camera !== PermissionsAndroid.RESULTS.GRANTED) return false;
+  if (forVideo) {
+    const mic = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+    );
+    if (mic !== PermissionsAndroid.RESULTS.GRANTED) return false;
+  }
+  return true;
+};
+
 const CreatePostScreen = ({ navigation }) => {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const [text, setText] = useState('');
-  const [imageUri, setImageUri] = useState(null);
+  const [media, setMedia] = useState(null); // { uri, type: 'image' | 'video' }
   const [submitting, setSubmitting] = useState(false);
   const bumpRefresh = usePostStore((s) => s.bumpRefresh);
   const coords = useLocationStore((s) => s.coords);
@@ -36,15 +76,92 @@ const CreatePostScreen = ({ navigation }) => {
     if (value.length <= MAX_POST_LENGTH) setText(value);
   };
 
-  const handlePickImage = async () => {
+  const applyAsset = (asset) => {
+    if (!asset?.uri) return;
+    const isVideo =
+      (asset.type && asset.type.startsWith('video')) ||
+      /\.(mp4|mov|m4v|webm|3gp)$/i.test(asset.uri);
+    setMedia({ uri: asset.uri, type: isVideo ? 'video' : 'image' });
+  };
+
+  const pickFromLibrary = async (mediaType) => {
+    const ok = await ensureAndroidMediaPermission(mediaType);
+    if (!ok) {
+      Alert.alert(
+        'Permission needed',
+        'Allow Circl to access your photos and videos to attach media.',
+      );
+      return;
+    }
     const res = await launchImageLibrary({
-      mediaType: 'photo',
+      mediaType,
       quality: 0.8,
       selectionLimit: 1,
+      videoQuality: 'medium',
+      includeBase64: false,
     });
     if (res.didCancel) return;
-    const asset = res.assets && res.assets[0];
-    if (asset?.uri) setImageUri(asset.uri);
+    if (res.errorCode) {
+      Alert.alert('Could not open library', res.errorMessage || res.errorCode);
+      return;
+    }
+    applyAsset(res.assets && res.assets[0]);
+  };
+
+  const captureWithCamera = async (mediaType) => {
+    const ok = await ensureAndroidCameraPermission(mediaType === 'video');
+    if (!ok) {
+      Alert.alert(
+        'Permission needed',
+        'Allow Circl to use your camera to capture media.',
+      );
+      return;
+    }
+    const res = await launchCamera({
+      mediaType,
+      quality: 0.8,
+      videoQuality: 'medium',
+      durationLimit: MAX_VIDEO_SECONDS,
+      saveToPhotos: true,
+    });
+    if (res.didCancel) return;
+    if (res.errorCode) {
+      Alert.alert('Could not open camera', res.errorMessage || res.errorCode);
+      return;
+    }
+    applyAsset(res.assets && res.assets[0]);
+  };
+
+  const handleAttach = () => {
+    const options = [
+      'Choose photo from library',
+      'Choose video from library',
+      'Take photo',
+      'Record video',
+      'Cancel',
+    ];
+    const actions = [
+      () => pickFromLibrary('photo'),
+      () => pickFromLibrary('video'),
+      () => captureWithCamera('photo'),
+      () => captureWithCamera('video'),
+    ];
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options, cancelButtonIndex: 4 },
+        (index) => {
+          if (index < actions.length) actions[index]();
+        },
+      );
+      return;
+    }
+    Alert.alert('Add media', undefined, [
+      { text: options[0], onPress: actions[0] },
+      { text: options[1], onPress: actions[1] },
+      { text: options[2], onPress: actions[2] },
+      { text: options[3], onPress: actions[3] },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
   const handlePost = async () => {
@@ -52,8 +169,8 @@ const CreatePostScreen = ({ navigation }) => {
     setSubmitting(true);
     try {
       let imageUrl;
-      if (imageUri) {
-        imageUrl = await uploadPostImage(imageUri);
+      if (media?.uri) {
+        imageUrl = await uploadPostMedia(media.uri, media.type);
       }
       await createPost({
         text: text.trim(),
@@ -62,7 +179,7 @@ const CreatePostScreen = ({ navigation }) => {
         lng: coords?.lng,
       });
       setText('');
-      setImageUri(null);
+      setMedia(null);
       bumpRefresh();
       navigation.goBack();
     } catch (err) {
@@ -95,13 +212,18 @@ const CreatePostScreen = ({ navigation }) => {
           multiline
           textAlignVertical="top"
         />
-        {imageUri ? (
+        {media ? (
           <View style={styles.previewWrap}>
-            <Image source={{ uri: imageUri }} style={styles.preview} />
+            <Image source={{ uri: media.uri }} style={styles.preview} />
+            {media.type === 'video' ? (
+              <View style={styles.videoOverlay} pointerEvents="none">
+                <Icon name="play-circle" size={56} color="#FFFFFF" />
+              </View>
+            ) : null}
             <TouchableOpacity
               style={styles.removeBtn}
               activeOpacity={0.7}
-              onPress={() => setImageUri(null)}
+              onPress={() => setMedia(null)}
             >
               <Icon name="close" size={18} color={colors.textPrimary} />
             </TouchableOpacity>
@@ -111,20 +233,20 @@ const CreatePostScreen = ({ navigation }) => {
           <TouchableOpacity
             style={styles.iconBtn}
             activeOpacity={0.7}
-            onPress={handlePickImage}
+            onPress={handleAttach}
           >
             <Icon name="image-outline" size={22} color={colors.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.iconBtn}
+            activeOpacity={0.7}
+            onPress={() => captureWithCamera('video')}
+          >
+            <Icon name="video-outline" size={22} color={colors.primary} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
             <Icon
               name="map-marker-outline"
-              size={22}
-              color={colors.primary}
-            />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
-            <Icon
-              name="emoticon-happy-outline"
               size={22}
               color={colors.primary}
             />
@@ -180,6 +302,12 @@ const makeStyles = (colors) =>
       width: '100%',
       height: 180,
       borderRadius: 12,
+      backgroundColor: colors.primaryLight,
+    },
+    videoOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     removeBtn: {
       position: 'absolute',

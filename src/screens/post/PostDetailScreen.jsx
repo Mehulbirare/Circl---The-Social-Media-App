@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -144,7 +145,22 @@ const PostDetailScreen = ({ route, navigation }) => {
               </View>
             </View>
             <Text style={styles.body}>{post.text}</Text>
-            {post.image ? <View style={styles.imagePlaceholder} /> : null}
+            {post.imageUrl ? (
+              <View style={styles.mediaWrap}>
+                {/\.(mp4|mov|m4v|webm|3gp)(\?|$)/i.test(post.imageUrl) ? (
+                  <View style={styles.videoBox}>
+                    <Icon name="play-circle" size={64} color="#FFFFFF" />
+                    <Text style={styles.videoLabel}>Video</Text>
+                  </View>
+                ) : (
+                  <Image
+                    source={{ uri: post.imageUrl }}
+                    style={styles.media}
+                    resizeMode="cover"
+                  />
+                )}
+              </View>
+            ) : null}
             <PostActions post={postForActions} onLike={handleLike} />
             <Text style={styles.commentsTitle}>Comments</Text>
             {comments.length === 0 ? (
@@ -247,11 +263,28 @@ const makeStyles = (colors) =>
       lineHeight: 26,
       marginBottom: spacing.lg,
     },
-    imagePlaceholder: {
-      height: 220,
-      backgroundColor: colors.primaryLight,
+    mediaWrap: {
       borderRadius: 12,
+      overflow: 'hidden',
       marginBottom: spacing.lg,
+    },
+    media: {
+      width: '100%',
+      height: 260,
+      backgroundColor: colors.primaryLight,
+    },
+    videoBox: {
+      width: '100%',
+      height: 260,
+      backgroundColor: '#000',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    videoLabel: {
+      color: '#FFFFFF',
+      marginTop: spacing.xs,
+      fontSize: typography.size.sm,
+      fontWeight: typography.weight.medium,
     },
     commentsTitle: {
       fontSize: typography.size.lg,

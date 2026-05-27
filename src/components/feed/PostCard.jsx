@@ -1,13 +1,18 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Avatar from '../common/Avatar';
 import PostActions from './PostActions';
 import { useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 
+const isVideoUrl = (url) => /\.(mp4|mov|m4v|webm|3gp)(\?|$)/i.test(url || '');
+
 const PostCard = ({ post, onPress, onLike }) => {
   const styles = useThemedStyles(makeStyles);
+  const mediaUrl = post.imageUrl;
+  const showVideo = mediaUrl && isVideoUrl(mediaUrl);
   return (
     <TouchableOpacity
       style={styles.card}
@@ -15,7 +20,7 @@ const PostCard = ({ post, onPress, onLike }) => {
       onPress={onPress}
     >
       <View style={styles.header}>
-        <Avatar name={post.author} />
+        <Avatar name={post.author} uri={post.authorAvatar} />
         <View style={styles.headerText}>
           <View style={styles.row}>
             <Text style={styles.name}>{post.author}</Text>
@@ -27,7 +32,18 @@ const PostCard = ({ post, onPress, onLike }) => {
         </View>
       </View>
       <Text style={styles.body}>{post.text}</Text>
-      {post.image ? <View style={styles.imagePlaceholder} /> : null}
+      {mediaUrl ? (
+        <View style={styles.mediaWrap}>
+          {showVideo ? (
+            <View style={styles.videoBox}>
+              <Icon name="play-circle" size={56} color="#FFFFFF" />
+              <Text style={styles.videoLabel}>Video</Text>
+            </View>
+          ) : (
+            <Image source={{ uri: mediaUrl }} style={styles.media} />
+          )}
+        </View>
+      ) : null}
       <PostActions post={post} onLike={onLike} />
     </TouchableOpacity>
   );
@@ -85,11 +101,28 @@ const makeStyles = (colors) =>
       lineHeight: 22,
       marginBottom: spacing.md,
     },
-    imagePlaceholder: {
-      height: 180,
-      backgroundColor: colors.primaryLight,
+    mediaWrap: {
       borderRadius: 12,
+      overflow: 'hidden',
       marginBottom: spacing.md,
+    },
+    media: {
+      width: '100%',
+      height: 220,
+      backgroundColor: colors.primaryLight,
+    },
+    videoBox: {
+      width: '100%',
+      height: 220,
+      backgroundColor: '#000',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    videoLabel: {
+      color: '#FFFFFF',
+      marginTop: spacing.xs,
+      fontSize: typography.size.sm,
+      fontWeight: typography.weight.medium,
     },
   });
 
