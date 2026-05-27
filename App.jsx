@@ -1,6 +1,7 @@
 import 'react-native-gesture-handler';
 import React, { useEffect } from 'react';
-import { StatusBar } from 'react-native';
+import { AppState, StatusBar } from 'react-native';
+import codePush from '@code-push-next/react-native-code-push';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AppNavigator from './src/navigation/AppNavigator';
@@ -10,6 +11,13 @@ import { useLocationStore } from './src/store/useLocationStore';
 import { getSession, onAuthChange } from './src/services/authService';
 import { getMyProfile } from './src/services/profileService';
 import { useColors } from './src/theme/useColors';
+
+const syncCodePush = () => {
+  codePush.sync({
+    installMode: codePush.InstallMode.ON_NEXT_RESTART,
+    mandatoryInstallMode: codePush.InstallMode.IMMEDIATE,
+  });
+};
 
 const ThemedStatusBar = () => {
   const colors = useColors();
@@ -72,13 +80,23 @@ const AppShell = () => {
   return <AppNavigator />;
 };
 
-const App = () => (
-  <GestureHandlerRootView style={{ flex: 1 }}>
-    <SafeAreaProvider>
-      <ThemedStatusBar />
-      <AppShell />
-    </SafeAreaProvider>
-  </GestureHandlerRootView>
-);
+const App = () => {
+  useEffect(() => {
+    syncCodePush();
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') syncCodePush();
+    });
+    return () => sub.remove();
+  }, []);
+
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <ThemedStatusBar />
+        <AppShell />
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
+  );
+};
 
 export default App;

@@ -10,6 +10,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "@code-push-next/react-native-code-push": "^10.3.0",
     "@react-native-async-storage/async-storage": "^3.1.0",
     "@react-native-community/datetimepicker": "^9.1.0",
     "@react-native-community/geolocation": "^3.4.0",

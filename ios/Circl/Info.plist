@@ -6,6 +6,10 @@
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
+	<key>CodePushDeploymentKey</key>
+	<string>8wdMuW--Jc6frTfiKjQZrUv6I7A0vmi68no</string>
+	<key>CodePushServerURL</key>
+	<string>https://codepush.appsonair.com</string>
 	<key>CFBundleDisplayName</key>
 	<string>Circl</string>
 	<key>CFBundleExecutable</key>
