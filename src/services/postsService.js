@@ -4,7 +4,7 @@ export async function getFeed({ offset = 0, limit = 20 } = {}) {
   const { data, error } = await supabase
     .from('posts')
     .select(
-      'id, author_id, text, image_url, likes_count, comments_count, created_at, lat, lng, author:profiles(full_name, avatar_url)',
+      'id, author_id, text, image_url, likes_count, comments_count, created_at, lat, lng, author:profiles!posts_author_id_fkey(full_name, avatar_url)',
     )
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
@@ -48,7 +48,7 @@ export async function createPost({ text, imageUrl, lat, lng }) {
 export async function getPostsByAuthor(userId, { offset = 0, limit = 20 } = {}) {
   const { data, error } = await supabase
     .from('posts')
-    .select('*, author:profiles(id, full_name, avatar_url)')
+    .select('*, author:profiles!posts_author_id_fkey(id, full_name, avatar_url)')
     .eq('author_id', userId)
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
@@ -59,7 +59,7 @@ export async function getPostsByAuthor(userId, { offset = 0, limit = 20 } = {}) 
 export async function getPost(postId) {
   const { data, error } = await supabase
     .from('posts')
-    .select('*, author:profiles(id, full_name, avatar_url)')
+    .select('*, author:profiles!posts_author_id_fkey(id, full_name, avatar_url)')
     .eq('id', postId)
     .single();
   if (error) throw error;

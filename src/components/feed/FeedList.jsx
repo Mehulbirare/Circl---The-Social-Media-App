@@ -1,11 +1,25 @@
 import React from 'react';
-import { FlatList, RefreshControl, View, Text, StyleSheet } from 'react-native';
+import {
+  FlatList,
+  RefreshControl,
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+} from 'react-native';
 import PostCard from './PostCard';
 import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 
-const FeedList = ({ posts, onRefresh, refreshing, onPressPost }) => {
+const FeedList = ({
+  posts,
+  onRefresh,
+  refreshing,
+  onPressPost,
+  onEndReached,
+  loadingMore,
+}) => {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   return (
@@ -20,6 +34,8 @@ const FeedList = ({ posts, onRefresh, refreshing, onPressPost }) => {
       )}
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
+      onEndReached={onEndReached}
+      onEndReachedThreshold={0.5}
       refreshControl={
         <RefreshControl
           refreshing={!!refreshing}
@@ -28,11 +44,18 @@ const FeedList = ({ posts, onRefresh, refreshing, onPressPost }) => {
           tintColor={colors.primary}
         />
       }
+      ListFooterComponent={
+        loadingMore ? (
+          <View style={styles.footer}>
+            <ActivityIndicator size="small" color={colors.primary} />
+          </View>
+        ) : null
+      }
       ListEmptyComponent={
         <View style={styles.empty}>
-          <Text style={styles.emptyTitle}>Your circle is quiet</Text>
+          <Text style={styles.emptyTitle}>Nothing here yet</Text>
           <Text style={styles.emptyText}>
-            Be the first to share something happening nearby.
+            Be the first to share something with everyone.
           </Text>
         </View>
       }
@@ -46,6 +69,9 @@ const makeStyles = (colors) =>
       paddingHorizontal: spacing.lg,
       paddingTop: spacing.sm,
       paddingBottom: spacing.huge,
+    },
+    footer: {
+      paddingVertical: spacing.lg,
     },
     empty: {
       alignItems: 'center',

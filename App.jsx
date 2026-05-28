@@ -12,11 +12,51 @@ import { getSession, onAuthChange } from './src/services/authService';
 import { getMyProfile } from './src/services/profileService';
 import { useColors } from './src/theme/useColors';
 
+const SYNC_STATUS_LABELS = {
+  [codePush.SyncStatus.UP_TO_DATE]: 'UP_TO_DATE',
+  [codePush.SyncStatus.UPDATE_INSTALLED]: 'UPDATE_INSTALLED',
+  [codePush.SyncStatus.UPDATE_IGNORED]: 'UPDATE_IGNORED',
+  [codePush.SyncStatus.UNKNOWN_ERROR]: 'UNKNOWN_ERROR',
+  [codePush.SyncStatus.SYNC_IN_PROGRESS]: 'SYNC_IN_PROGRESS',
+  [codePush.SyncStatus.CHECKING_FOR_UPDATE]: 'CHECKING_FOR_UPDATE',
+  [codePush.SyncStatus.AWAITING_USER_ACTION]: 'AWAITING_USER_ACTION',
+  [codePush.SyncStatus.DOWNLOADING_PACKAGE]: 'DOWNLOADING_PACKAGE',
+  [codePush.SyncStatus.INSTALLING_UPDATE]: 'INSTALLING_UPDATE',
+};
+
 const syncCodePush = () => {
-  codePush.sync({
-    installMode: codePush.InstallMode.ON_NEXT_RESTART,
-    mandatoryInstallMode: codePush.InstallMode.IMMEDIATE,
-  });
+  // Diagnostic: log exactly what the server returns for this binary version.
+  codePush
+    .checkForUpdate()
+    .then((update) => {
+      console.log(
+        '[CodePush] checkForUpdate ->',
+        update ? JSON.stringify(update) : 'no update available',
+      );
+    })
+    .catch((err) => console.log('[CodePush] checkForUpdate error', err));
+
+  codePush.sync(
+    {
+      // Prompt the user when an update is available instead of syncing silently.
+      updateDialog: {
+        title: 'Update available',
+        optionalUpdateMessage:
+          'A new version of Circl is available. Update now?',
+        optionalInstallButtonLabel: 'Update',
+        optionalIgnoreButtonLabel: 'Later',
+        mandatoryUpdateMessage:
+          'A required update is available and will be installed now.',
+        mandatoryContinueButtonLabel: 'Update',
+      },
+      // IMMEDIATE restarts the app right after install so the user actually
+      // gets the new bundle; ON_NEXT_RESTART would wait for a manual relaunch.
+      installMode: codePush.InstallMode.IMMEDIATE,
+      mandatoryInstallMode: codePush.InstallMode.IMMEDIATE,
+    },
+    (status) =>
+      console.log('[CodePush] sync status', SYNC_STATUS_LABELS[status] ?? status),
+  );
 };
 
 const ThemedStatusBar = () => {
