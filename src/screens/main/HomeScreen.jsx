@@ -67,6 +67,7 @@ const HomeScreen = ({ navigation }) => {
   const city = useLocationStore((s) => s.city);
   const region = useLocationStore((s) => s.region);
   const refreshKey = usePostStore((s) => s.refreshKey);
+  const postStats = usePostStore((s) => s.postStats);
   const [posts, setPosts] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -146,6 +147,13 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
+  const displayPosts = posts.map((p) => {
+    const override = postStats[p.id]?.comments;
+    return override == null
+      ? p
+      : { ...p, comments: Math.max(p.comments ?? 0, override) };
+  });
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
@@ -182,7 +190,7 @@ const HomeScreen = ({ navigation }) => {
         </View>
       ) : (
         <FeedList
-          posts={posts}
+          posts={displayPosts}
           refreshing={refreshing}
           onRefresh={handleRefresh}
           onEndReached={loadMore}

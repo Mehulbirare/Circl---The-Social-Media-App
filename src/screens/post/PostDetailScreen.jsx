@@ -24,6 +24,7 @@ import {
   addComment,
 } from '../../services/postsService';
 import { thumbnailUrlForVideoUrl } from '../../services/imageService';
+import { usePostStore } from '../../store/usePostStore';
 import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
@@ -54,6 +55,7 @@ const PostDetailScreen = ({ route, navigation }) => {
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [thumbFailed, setThumbFailed] = useState(false);
+  const setPostComments = usePostStore((s) => s.setPostComments);
 
   useEffect(() => {
     if (!postId) return undefined;
@@ -84,6 +86,13 @@ const PostDetailScreen = ({ route, navigation }) => {
       active = false;
     };
   }, [postId]);
+
+  // Reflect the authoritative comment count back onto the feed card once
+  // comments have loaded and after each new comment is posted.
+  useEffect(() => {
+    if (loading || !postId) return;
+    setPostComments(postId, comments.length);
+  }, [comments.length, loading, postId, setPostComments]);
 
   const handleLike = async () => {
     try {

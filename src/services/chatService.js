@@ -57,6 +57,26 @@ export async function sendMessage(chatId, text) {
   return data;
 }
 
+// Returns a { [chatId]: count } map of unread inbound messages for the current
+// user. Realtime/RLS scopes `messages` to chats the user belongs to, so we only
+// need to exclude the user's own messages and already-read rows.
+export async function getUnreadCounts() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return {};
+  const { data, error } = await supabase
+    .from('messages')
+    .select('chat_id')
+    .eq('read', false)
+    .neq('sender_id', user.id);
+  if (error) throw error;
+  return (data || []).reduce((acc, { chat_id }) => {
+    acc[chat_id] = (acc[chat_id] || 0) + 1;
+    return acc;
+  }, {});
+}
+
 export async function markRead(chatId) {
   const {
     data: { user },

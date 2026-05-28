@@ -4,6 +4,7 @@ import { useChatStore } from '../store/useChatStore';
 import {
   subscribeToInboundMessages,
   getMessageBannerInfo,
+  getUnreadCounts,
 } from '../services/chatService';
 
 // Subscribes to inbound messages for the current user as long as the user is
@@ -18,6 +19,12 @@ export function useGlobalChatSubscription() {
       useChatStore.getState().resetChatState();
       return undefined;
     }
+
+    // Seed the tab/list badges with what's already unread in the DB so counts
+    // are correct on launch, not only after a live message arrives.
+    getUnreadCounts()
+      .then((counts) => useChatStore.getState().setUnreadCounts(counts))
+      .catch(() => {});
 
     const unsubscribe = subscribeToInboundMessages(userId, async (msg) => {
       const { activeChatId, noteInbound, showBanner } = useChatStore.getState();

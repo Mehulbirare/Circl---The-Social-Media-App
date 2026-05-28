@@ -28,6 +28,8 @@ export const useChatStore = create((set) => ({
       };
     }),
 
+  setUnreadCounts: (unreadByChat) => set({ unreadByChat: unreadByChat || {} }),
+
   showBanner: (banner) => set({ banner }),
   clearBanner: () => set({ banner: null }),
 
