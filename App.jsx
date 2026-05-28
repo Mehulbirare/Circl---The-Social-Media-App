@@ -39,12 +39,20 @@ const AppShell = () => {
   useEffect(() => {
     let active = true;
 
+    const loadProfile = async () => {
+      try {
+        const profile = await getMyProfile();
+        if (active) login(profile);
+      } catch (_) {
+        // profile fetch failed — likely RLS race; ignore
+      }
+    };
+
     (async () => {
       try {
         const session = await getSession();
         if (session && active) {
-          const profile = await getMyProfile();
-          login(profile);
+          await loadProfile();
         }
       } catch (_) {
         // ignore — user just stays logged out
@@ -56,18 +64,20 @@ const AppShell = () => {
       }
     })();
 
-    const { data: sub } = onAuthChange(async (session) => {
+    const { data: sub } = onAuthChange((session) => {
       if (!active) return;
-      if (session) {
-        try {
-          const profile = await getMyProfile();
-          login(profile);
-        } catch (_) {
-          // profile fetch failed — likely RLS race; ignore
+      // Defer out of the callback: Supabase fires this while holding its
+      // internal auth lock, so awaiting any supabase.auth/db call here
+      // re-acquires that lock and deadlocks (app hangs on the splash
+      // spinner on relaunch when a session is persisted).
+      setTimeout(() => {
+        if (!active) return;
+        if (session) {
+          loadProfile();
+        } else {
+          logout();
         }
-      } else {
-        logout();
-      }
+      }, 0);
     });
 
     return () => {
