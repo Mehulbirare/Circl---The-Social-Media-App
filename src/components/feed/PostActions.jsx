@@ -5,7 +5,7 @@ import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
 
-const PostActions = ({ post, onLike }) => {
+const PostActions = ({ post, onLike, onComment }) => {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
   const [liked, setLiked] = useState(!!post.liked);
@@ -31,7 +31,12 @@ const PostActions = ({ post, onLike }) => {
         />
         <Text style={[styles.count, liked && styles.countActive]}>{likes}</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={styles.item} activeOpacity={0.7}>
+      <TouchableOpacity
+        style={styles.item}
+        activeOpacity={0.7}
+        onPress={onComment}
+        disabled={!onComment}
+      >
         <Icon
           name="comment-outline"
           size={22}

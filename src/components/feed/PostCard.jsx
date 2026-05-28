@@ -10,7 +10,7 @@ import { typography } from '../../theme/typography';
 
 const isVideoUrl = (url) => /\.(mp4|mov|m4v|webm|3gp)(\?|$)/i.test(url || '');
 
-const PostCard = ({ post, onPress, onLike }) => {
+const PostCard = ({ post, onPress, onLike, onComment }) => {
   const styles = useThemedStyles(makeStyles);
   const [thumbFailed, setThumbFailed] = useState(false);
   const mediaUrl = post.imageUrl;
@@ -58,7 +58,7 @@ const PostCard = ({ post, onPress, onLike }) => {
           )}
         </View>
       ) : null}
-      <PostActions post={post} onLike={onLike} />
+      <PostActions post={post} onLike={onLike} onComment={onComment} />
     </TouchableOpacity>
   );
 };

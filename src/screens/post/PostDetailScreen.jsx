@@ -94,6 +94,15 @@ const PostDetailScreen = ({ route, navigation }) => {
     setPostComments(postId, comments.length);
   }, [comments.length, loading, postId, setPostComments]);
 
+  const handleOpenAuthor = () => {
+    if (!post.author_id) return;
+    navigation.navigate('UserProfile', {
+      userId: post.author_id,
+      name: post.author,
+      avatar: post.authorAvatar,
+    });
+  };
+
   const handleLike = async () => {
     try {
       await toggleLike(postId);
@@ -145,7 +154,12 @@ const PostDetailScreen = ({ route, navigation }) => {
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
-            <View style={styles.row}>
+            <TouchableOpacity
+              style={styles.row}
+              activeOpacity={0.7}
+              onPress={handleOpenAuthor}
+              disabled={!post.author_id}
+            >
               <Avatar name={post.author} uri={post.authorAvatar} />
               <View style={styles.headerText}>
                 <Text style={styles.name}>{post.author}</Text>
@@ -154,7 +168,7 @@ const PostDetailScreen = ({ route, navigation }) => {
                   {post.time || formatRelative(post.created_at)}
                 </Text>
               </View>
-            </View>
+            </TouchableOpacity>
             <Text style={styles.body}>{post.text}</Text>
             {post.imageUrl ? (
               <View style={styles.mediaWrap}>

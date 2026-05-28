@@ -17,6 +17,7 @@ const FeedList = ({
   onRefresh,
   refreshing,
   onPressPost,
+  onComment,
   onEndReached,
   loadingMore,
 }) => {
@@ -30,6 +31,7 @@ const FeedList = ({
         <PostCard
           post={item}
           onPress={() => onPressPost && onPressPost(item)}
+          onComment={onComment ? () => onComment(item) : undefined}
         />
       )}
       contentContainerStyle={styles.content}

@@ -47,6 +47,7 @@ const formatDistance = (km) => {
 
 const mapPost = (row) => ({
   id: row.id,
+  author_id: row.author_id,
   author: row.author_name || 'Someone nearby',
   authorAvatar: row.author_avatar,
   time: formatRelative(row.created_at),
@@ -196,6 +197,7 @@ const HomeScreen = ({ navigation }) => {
           onEndReached={loadMore}
           loadingMore={loadingMore}
           onPressPost={(post) => navigation.navigate('PostDetail', { post })}
+          onComment={(post) => navigation.navigate('PostDetail', { post })}
         />
       )}
     </SafeAreaView>

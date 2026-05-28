@@ -39,6 +39,7 @@ const formatRelative = (iso) => {
 
 const mapPost = (row) => ({
   id: row.id,
+  author_id: row.author_id,
   author: row.author?.full_name || 'Someone',
   authorAvatar: row.author?.avatar_url,
   time: formatRelative(row.created_at),
@@ -308,6 +309,7 @@ const UserProfileScreen = ({ route, navigation }) => {
                 key={post.id}
                 post={post}
                 onPress={() => navigation.navigate('PostDetail', { post })}
+                onComment={() => navigation.navigate('PostDetail', { post })}
               />
             ))
           )}
