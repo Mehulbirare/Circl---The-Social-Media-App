@@ -1,15 +1,28 @@
 import { supabase } from '../lib/supabase';
 
-export async function getFeed({ lat, lng, radiusKm = 5, offset = 0, limit = 20 }) {
-  const { data, error } = await supabase.rpc('nearby_posts', {
-    user_lat: lat,
-    user_lng: lng,
-    radius_km: radiusKm,
-    page_offset: offset,
-    page_limit: limit,
-  });
+export async function getFeed({ offset = 0, limit = 20 } = {}) {
+  const { data, error } = await supabase
+    .from('posts')
+    .select(
+      'id, author_id, text, image_url, likes_count, comments_count, created_at, lat, lng, author:profiles(full_name, avatar_url)',
+    )
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
   if (error) throw error;
-  return data;
+  return (data || []).map((p) => ({
+    id: p.id,
+    author_id: p.author_id,
+    author_name: p.author?.full_name,
+    author_avatar: p.author?.avatar_url,
+    text: p.text,
+    image_url: p.image_url,
+    likes_count: p.likes_count,
+    comments_count: p.comments_count,
+    created_at: p.created_at,
+    lat: p.lat,
+    lng: p.lng,
+    distance_km: null,
+  }));
 }
 
 export async function createPost({ text, imageUrl, lat, lng }) {

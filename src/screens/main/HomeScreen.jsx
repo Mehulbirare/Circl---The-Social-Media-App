@@ -52,17 +52,15 @@ const HomeScreen = ({ navigation }) => {
   const styles = useThemedStyles(makeStyles);
   const city = useLocationStore((s) => s.city);
   const region = useLocationStore((s) => s.region);
-  const coords = useLocationStore((s) => s.coords);
   const refreshKey = usePostStore((s) => s.refreshKey);
   const [posts, setPosts] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    if (!coords) return;
-    const rows = await getFeed({ lat: coords.lat, lng: coords.lng, radiusKm: 5 });
+    const rows = await getFeed();
     setPosts((rows || []).map(mapPost));
-  }, [coords]);
+  }, []);
 
   useEffect(() => {
     let active = true;

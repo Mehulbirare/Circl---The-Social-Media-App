@@ -28,9 +28,11 @@ const PostCard = ({ post, onPress, onLike }) => {
         <View style={styles.headerText}>
           <View style={styles.row}>
             <Text style={styles.name}>{post.author}</Text>
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{post.distance}</Text>
-            </View>
+            {post.distance ? (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{post.distance}</Text>
+              </View>
+            ) : null}
           </View>
           <Text style={styles.time}>{post.time}</Text>
         </View>
