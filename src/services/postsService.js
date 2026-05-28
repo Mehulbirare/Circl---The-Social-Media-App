@@ -32,6 +32,17 @@ export async function createPost({ text, imageUrl, lat, lng }) {
   return data;
 }
 
+export async function getPostsByAuthor(userId, { offset = 0, limit = 20 } = {}) {
+  const { data, error } = await supabase
+    .from('posts')
+    .select('*, author:profiles(id, full_name, avatar_url)')
+    .eq('author_id', userId)
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+  if (error) throw error;
+  return data;
+}
+
 export async function getPost(postId) {
   const { data, error } = await supabase
     .from('posts')

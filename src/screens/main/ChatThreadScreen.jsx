@@ -127,16 +127,29 @@ const ChatThreadScreen = ({ route, navigation }) => {
         >
           <Icon name="arrow-left" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Avatar
-          name={other?.full_name || 'User'}
-          size={36}
-          uri={other?.avatar_url}
-        />
-        <View style={styles.headerText}>
-          <Text style={styles.headerName} numberOfLines={1}>
-            {other?.full_name || 'Chat'}
-          </Text>
-        </View>
+        <TouchableOpacity
+          style={styles.headerProfile}
+          activeOpacity={0.7}
+          disabled={!other?.id}
+          onPress={() =>
+            navigation.navigate('UserProfile', {
+              userId: other.id,
+              name: other.full_name,
+              avatar: other.avatar_url,
+            })
+          }
+        >
+          <Avatar
+            name={other?.full_name || 'User'}
+            size={36}
+            uri={other?.avatar_url}
+          />
+          <View style={styles.headerText}>
+            <Text style={styles.headerName} numberOfLines={1}>
+              {other?.full_name || 'Chat'}
+            </Text>
+          </View>
+        </TouchableOpacity>
       </View>
       <KeyboardAvoidingView
         style={styles.flex}
@@ -191,6 +204,12 @@ const makeStyles = (colors) =>
       paddingVertical: spacing.md,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
+    },
+    headerProfile: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginLeft: spacing.md,
     },
     headerText: {
       marginLeft: spacing.md,

@@ -10,6 +10,21 @@ export async function getNearbyUsers({ lat, lng, radiusKm = 5 }) {
   return data;
 }
 
+export async function getAllUsers({ limit = 200 } = {}) {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  let query = supabase
+    .from('profiles')
+    .select('id, full_name, avatar_url, city')
+    .order('full_name', { ascending: true })
+    .limit(limit);
+  if (user) query = query.neq('id', user.id);
+  const { data, error } = await query;
+  if (error) throw error;
+  return data || [];
+}
+
 export async function searchUsers(q) {
   const { data, error } = await supabase
     .from('profiles')
@@ -18,6 +33,26 @@ export async function searchUsers(q) {
     .limit(20);
   if (error) throw error;
   return data;
+}
+
+export async function getFollowing() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+  const { data: rows, error } = await supabase
+    .from('follows')
+    .select('following_id')
+    .eq('follower_id', user.id);
+  if (error) throw error;
+  const ids = (rows || []).map((r) => r.following_id);
+  if (ids.length === 0) return [];
+  const { data: profiles, error: pErr } = await supabase
+    .from('profiles')
+    .select('id, full_name, avatar_url, city')
+    .in('id', ids);
+  if (pErr) throw pErr;
+  return profiles || [];
 }
 
 export async function follow(userId) {

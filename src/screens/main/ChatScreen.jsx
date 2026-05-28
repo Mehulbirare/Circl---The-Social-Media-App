@@ -57,7 +57,11 @@ const ChatScreen = ({ navigation }) => {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.title}>Chats</Text>
-        <TouchableOpacity style={styles.headerButton} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.headerButton}
+          activeOpacity={0.7}
+          onPress={() => navigation.navigate('NewChat')}
+        >
           <Icon name="square-edit-outline" size={22} color={colors.textPrimary} />
         </TouchableOpacity>
       </View>
@@ -72,9 +76,19 @@ const ChatScreen = ({ navigation }) => {
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
-            <Text style={styles.empty}>
-              No conversations yet. Say hi to someone nearby.
-            </Text>
+            <View style={styles.emptyWrap}>
+              <Text style={styles.empty}>
+                No conversations yet. Say hi to someone nearby.
+              </Text>
+              <TouchableOpacity
+                style={styles.emptyBtn}
+                activeOpacity={0.85}
+                onPress={() => navigation.navigate('NewChat')}
+              >
+                <Icon name="plus" size={18} color="#FFFFFF" />
+                <Text style={styles.emptyBtnText}>Start a chat</Text>
+              </TouchableOpacity>
+            </View>
           }
           renderItem={({ item }) => {
             const unread = unreadByChat[item.id] || 0;
@@ -157,10 +171,28 @@ const makeStyles = (colors) =>
       padding: spacing.lg,
       paddingTop: spacing.sm,
     },
+    emptyWrap: {
+      alignItems: 'center',
+      paddingVertical: spacing.huge,
+    },
     empty: {
       textAlign: 'center',
       color: colors.textSecondary,
-      paddingVertical: spacing.huge,
+    },
+    emptyBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.primary,
+      borderRadius: 24,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm + 2,
+      marginTop: spacing.lg,
+    },
+    emptyBtnText: {
+      color: '#FFFFFF',
+      fontWeight: typography.weight.bold,
+      fontSize: typography.size.sm,
+      marginLeft: spacing.xs,
     },
     row: {
       flexDirection: 'row',

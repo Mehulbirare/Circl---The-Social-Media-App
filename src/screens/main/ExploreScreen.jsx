@@ -12,9 +12,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Avatar from '../../components/common/Avatar';
 import SkeletonExplore from '../../components/skeleton/SkeletonExplore';
-import { useLocationStore } from '../../store/useLocationStore';
 import {
-  getNearbyUsers,
+  getAllUsers,
   searchUsers,
   follow,
   unfollow,
@@ -26,16 +25,9 @@ import { typography } from '../../theme/typography';
 
 const TOPICS = ['#Food', '#Events', '#Help', '#Sports', '#News'];
 
-const formatDistance = (km) => {
-  if (km == null) return '';
-  if (km < 1) return `${Math.round(km * 1000)} m away`;
-  return `${km.toFixed(1)} km away`;
-};
-
-const ExploreScreen = () => {
+const ExploreScreen = ({ navigation }) => {
   const colors = useColors();
   const styles = useThemedStyles(makeStyles);
-  const coords = useLocationStore((s) => s.coords);
   const [query, setQuery] = useState('');
   const [users, setUsers] = useState([]);
   const [searchResults, setSearchResults] = useState(null);
@@ -44,16 +36,15 @@ const ExploreScreen = () => {
   const searchTimer = useRef(null);
 
   useEffect(() => {
-    if (!coords) return undefined;
     let active = true;
     (async () => {
       try {
-        const [nearby, follows] = await Promise.all([
-          getNearbyUsers({ lat: coords.lat, lng: coords.lng, radiusKm: 5 }),
+        const [all, follows] = await Promise.all([
+          getAllUsers(),
           loadCurrentFollows(),
         ]);
         if (!active) return;
-        setUsers(nearby || []);
+        setUsers(all || []);
         setFollowingSet(new Set(follows));
       } finally {
         if (active) setLoading(false);
@@ -62,7 +53,7 @@ const ExploreScreen = () => {
     return () => {
       active = false;
     };
-  }, [coords]);
+  }, []);
 
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
@@ -101,15 +92,8 @@ const ExploreScreen = () => {
   };
 
   const visible = useMemo(() => {
-    if (searchResults == null) {
-      return users.map((u) => ({
-        id: u.id,
-        name: u.full_name,
-        avatar: u.avatar_url,
-        subtitle: formatDistance(u.distance_km),
-      }));
-    }
-    return searchResults.map((u) => ({
+    const source = searchResults == null ? users : searchResults;
+    return source.map((u) => ({
       id: u.id,
       name: u.full_name,
       avatar: u.avatar_url,
@@ -165,19 +149,30 @@ const ExploreScreen = () => {
               searchResults == null && styles.sectionTitleSpaced,
             ]}
           >
-            {searchResults == null ? 'People nearby' : 'Search results'}
+            {searchResults == null ? 'All people' : 'Search results'}
           </Text>
           {visible.length === 0 ? (
             <Text style={styles.empty}>
               {searchResults == null
-                ? 'No one nearby yet.'
+                ? 'No people yet.'
                 : 'No matches.'}
             </Text>
           ) : (
             visible.map((u) => {
               const isFollowing = followingSet.has(u.id);
               return (
-                <View key={u.id} style={styles.userCard}>
+                <TouchableOpacity
+                  key={u.id}
+                  style={styles.userCard}
+                  activeOpacity={0.7}
+                  onPress={() =>
+                    navigation.navigate('UserProfile', {
+                      userId: u.id,
+                      name: u.name,
+                      avatar: u.avatar,
+                    })
+                  }
+                >
                   <Avatar name={u.name} uri={u.avatar} />
                   <View style={styles.userInfo}>
                     <Text style={styles.userName}>{u.name}</Text>
@@ -202,7 +197,7 @@ const ExploreScreen = () => {
                       {isFollowing ? 'Following' : 'Follow'}
                     </Text>
                   </TouchableOpacity>
-                </View>
+                </TouchableOpacity>
               );
             })
           )}

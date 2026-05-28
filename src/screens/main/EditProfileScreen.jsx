@@ -14,6 +14,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Avatar from '../../components/common/Avatar';
+import BottomSheet from '../../components/common/BottomSheet';
 import SkeletonEditProfile from '../../components/skeleton/SkeletonEditProfile';
 import { useAuthStore } from '../../store/useAuthStore';
 import { updateProfile } from '../../services/profileService';
@@ -35,6 +36,7 @@ const EditProfileScreen = ({ navigation }) => {
   const [mobile, setMobile] = useState(user?.mobile || '');
   const [email, setEmail] = useState(user?.email || '');
   const [avatarUri, setAvatarUri] = useState(user?.avatar_url || null);
+  const [photoSheet, setPhotoSheet] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -43,29 +45,29 @@ const EditProfileScreen = ({ navigation }) => {
     return () => clearTimeout(t);
   }, []);
 
-  const handlePickImage = () => {
-    Alert.alert('Profile photo', 'Choose a source', [
-      {
-        text: 'Take photo',
-        onPress: () =>
-          launchCamera({ mediaType: 'photo', quality: 0.8 }, handlePickResult),
-      },
-      {
-        text: 'Choose from library',
-        onPress: () =>
-          launchImageLibrary(
-            { mediaType: 'photo', quality: 0.8, selectionLimit: 1 },
-            handlePickResult,
-          ),
-      },
-      avatarUri && {
-        text: 'Remove photo',
-        style: 'destructive',
-        onPress: () => setAvatarUri(null),
-      },
-      { text: 'Cancel', style: 'cancel' },
-    ].filter(Boolean));
-  };
+  const photoOptions = [
+    {
+      label: 'Take photo',
+      icon: 'camera',
+      onPress: () =>
+        launchCamera({ mediaType: 'photo', quality: 0.8 }, handlePickResult),
+    },
+    {
+      label: 'Choose from library',
+      icon: 'image-multiple',
+      onPress: () =>
+        launchImageLibrary(
+          { mediaType: 'photo', quality: 0.8, selectionLimit: 1 },
+          handlePickResult,
+        ),
+    },
+    avatarUri && {
+      label: 'Remove photo',
+      icon: 'trash-can-outline',
+      destructive: true,
+      onPress: () => setAvatarUri(null),
+    },
+  ].filter(Boolean);
 
   const handlePickResult = (result) => {
     if (result?.didCancel) return;
@@ -180,16 +182,15 @@ const EditProfileScreen = ({ navigation }) => {
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.avatarSection}>
-          <View>
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => setPhotoSheet(true)}
+          >
             <Avatar name={fullName || '?'} size={96} uri={avatarUri} />
-            <TouchableOpacity
-              style={styles.cameraBadge}
-              onPress={handlePickImage}
-              activeOpacity={0.85}
-            >
+            <View style={styles.cameraBadge}>
               <Icon name="camera" size={16} color={colors.primary} />
-            </TouchableOpacity>
-          </View>
+            </View>
+          </TouchableOpacity>
         </View>
 
         <Text style={styles.sectionTitle}>Basic Detail</Text>
@@ -287,6 +288,13 @@ const EditProfileScreen = ({ navigation }) => {
         </TouchableOpacity>
       </SafeAreaView>
       )}
+
+      <BottomSheet
+        visible={photoSheet}
+        onClose={() => setPhotoSheet(false)}
+        title="Profile photo"
+        options={photoOptions}
+      />
     </SafeAreaView>
   );
 };

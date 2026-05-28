@@ -7,7 +7,9 @@ import ExploreScreen from '../screens/main/ExploreScreen';
 import CreatePostScreen from '../screens/main/CreatePostScreen';
 import ChatScreen from '../screens/main/ChatScreen';
 import ChatThreadScreen from '../screens/main/ChatThreadScreen';
+import NewChatScreen from '../screens/main/NewChatScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
+import UserProfileScreen from '../screens/main/UserProfileScreen';
 import EditProfileScreen from '../screens/main/EditProfileScreen';
 import SettingsScreen from '../screens/main/SettingsScreen';
 import PostDetailScreen from '../screens/post/PostDetailScreen';
@@ -41,6 +43,8 @@ const MainNavigator = () => {
         <Stack.Screen name="Settings" component={SettingsScreen} />
         <Stack.Screen name="PostDetail" component={PostDetailScreen} />
         <Stack.Screen name="ChatThread" component={ChatThreadScreen} />
+        <Stack.Screen name="NewChat" component={NewChatScreen} />
+        <Stack.Screen name="UserProfile" component={UserProfileScreen} />
       </Stack.Navigator>
       <NotificationBanner />
     </View>
