@@ -164,12 +164,20 @@ const UserProfileScreen = ({ route, navigation }) => {
   const city = profile?.city;
   const region = profile?.region;
 
-  const Stat = ({ value, label }) => (
-    <View style={styles.stat}>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </View>
-  );
+  const Stat = ({ value, label, onPress }) => {
+    const content = (
+      <>
+        <Text style={styles.statValue}>{value}</Text>
+        <Text style={styles.statLabel}>{label}</Text>
+      </>
+    );
+    if (!onPress) return <View style={styles.stat}>{content}</View>;
+    return (
+      <TouchableOpacity style={styles.stat} activeOpacity={0.7} onPress={onPress}>
+        {content}
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -224,9 +232,21 @@ const UserProfileScreen = ({ route, navigation }) => {
           <View style={styles.statsCard}>
             <Stat value={String(stats.posts)} label="Posts" />
             <View style={styles.statDivider} />
-            <Stat value={String(stats.followers)} label="Followers" />
+            <Stat
+              value={String(stats.followers)}
+              label="Followers"
+              onPress={() =>
+                navigation.push('FollowList', { userId, mode: 'followers' })
+              }
+            />
             <View style={styles.statDivider} />
-            <Stat value={String(stats.following)} label="Following" />
+            <Stat
+              value={String(stats.following)}
+              label="Following"
+              onPress={() =>
+                navigation.push('FollowList', { userId, mode: 'following' })
+              }
+            />
           </View>
         </View>
 

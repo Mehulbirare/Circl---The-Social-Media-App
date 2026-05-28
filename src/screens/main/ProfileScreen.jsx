@@ -12,14 +12,46 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import Avatar from '../../components/common/Avatar';
+import PostCard from '../../components/feed/PostCard';
 import SkeletonProfile from '../../components/skeleton/SkeletonProfile';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useLocationStore } from '../../store/useLocationStore';
 import { getMyProfile, getProfileStats } from '../../services/profileService';
+import { getPostsByAuthor } from '../../services/postsService';
 import { signOut } from '../../services/authService';
 import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
+
+const formatRelative = (iso) => {
+  if (!iso) return '';
+  const diff = Math.max(0, Date.now() - new Date(iso).getTime());
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d}d ago`;
+  return `${Math.floor(d / 7)}w ago`;
+};
+
+const mapPost = (row) => ({
+  id: row.id,
+  author_id: row.author_id,
+  author: row.author?.full_name || 'Someone',
+  authorAvatar: row.author?.avatar_url,
+  time: formatRelative(row.created_at),
+  distance: '',
+  text: row.text,
+  image: !!row.image_url,
+  imageUrl: row.image_url,
+  likes: row.likes_count ?? 0,
+  comments: row.comments_count ?? 0,
+  lat: row.lat,
+  lng: row.lng,
+  created_at: row.created_at,
+});
 
 const ProfileScreen = ({ navigation }) => {
   const colors = useColors();
@@ -29,6 +61,7 @@ const ProfileScreen = ({ navigation }) => {
   const storeCity = useLocationStore((s) => s.city);
   const storeRegion = useLocationStore((s) => s.region);
   const [stats, setStats] = useState({ posts: 0, followers: 0, following: 0 });
+  const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -38,9 +71,13 @@ const ProfileScreen = ({ navigation }) => {
         const profile = await getMyProfile();
         if (!active) return;
         login(profile);
-        const s = await getProfileStats(profile.id);
+        const [s, fp] = await Promise.all([
+          getProfileStats(profile.id),
+          getPostsByAuthor(profile.id),
+        ]);
         if (!active) return;
         setStats(s);
+        setPosts((fp || []).map(mapPost));
       } finally {
         if (active) setLoading(false);
       }
@@ -105,12 +142,20 @@ const ProfileScreen = ({ navigation }) => {
     },
   ];
 
-  const Stat = ({ value, label }) => (
-    <View style={styles.stat}>
-      <Text style={styles.statValue}>{value}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </View>
-  );
+  const Stat = ({ value, label, onPress }) => {
+    const content = (
+      <>
+        <Text style={styles.statValue}>{value}</Text>
+        <Text style={styles.statLabel}>{label}</Text>
+      </>
+    );
+    if (!onPress) return <View style={styles.stat}>{content}</View>;
+    return (
+      <TouchableOpacity style={styles.stat} activeOpacity={0.7} onPress={onPress}>
+        {content}
+      </TouchableOpacity>
+    );
+  };
 
   const MenuRow = ({ icon, label, tint }) => (
     <TouchableOpacity style={styles.menuRow} activeOpacity={0.7}>
@@ -169,9 +214,27 @@ const ProfileScreen = ({ navigation }) => {
           <View style={styles.statsCard}>
             <Stat value={String(stats.posts)} label="Posts" />
             <View style={styles.statDivider} />
-            <Stat value={String(stats.followers)} label="Followers" />
+            <Stat
+              value={String(stats.followers)}
+              label="Followers"
+              onPress={() =>
+                navigation.navigate('FollowList', {
+                  userId: user?.id,
+                  mode: 'followers',
+                })
+              }
+            />
             <View style={styles.statDivider} />
-            <Stat value={String(stats.following)} label="Following" />
+            <Stat
+              value={String(stats.following)}
+              label="Following"
+              onPress={() =>
+                navigation.navigate('FollowList', {
+                  userId: user?.id,
+                  mode: 'following',
+                })
+              }
+            />
           </View>
         </View>
 
@@ -229,6 +292,27 @@ const ProfileScreen = ({ navigation }) => {
               tint="#8B5CF6"
             />
           </View>
+
+          <Text style={styles.sectionTitle}>My posts</Text>
+          {posts.length === 0 ? (
+            <View style={styles.emptyWrap}>
+              <Icon
+                name="image-multiple-outline"
+                size={32}
+                color={colors.textSecondary}
+              />
+              <Text style={styles.empty}>You haven't posted yet.</Text>
+            </View>
+          ) : (
+            posts.map((post) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                onPress={() => navigation.navigate('PostDetail', { post })}
+                onComment={() => navigation.navigate('PostDetail', { post })}
+              />
+            ))
+          )}
 
           <TouchableOpacity
             style={styles.logoutBtn}
@@ -436,6 +520,22 @@ const makeStyles = (colors) =>
       fontSize: typography.size.sm,
       color: 'rgba(255,255,255,0.9)',
       marginTop: 2,
+    },
+    sectionTitle: {
+      fontSize: typography.size.lg,
+      fontWeight: typography.weight.bold,
+      color: colors.textPrimary,
+      marginTop: spacing.xl,
+      marginBottom: spacing.md,
+    },
+    emptyWrap: {
+      alignItems: 'center',
+      paddingVertical: spacing.xl,
+    },
+    empty: {
+      fontSize: typography.size.sm,
+      color: colors.textSecondary,
+      marginTop: spacing.sm,
     },
     menuCard: {
       backgroundColor: colors.card,
