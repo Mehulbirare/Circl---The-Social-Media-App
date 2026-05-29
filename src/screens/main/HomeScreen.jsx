@@ -7,6 +7,7 @@ import SkeletonFeed from '../../components/skeleton/SkeletonFeed';
 import { useLocationStore } from '../../store/useLocationStore';
 import { usePostStore } from '../../store/usePostStore';
 import { getFeed } from '../../services/postsService';
+import { getUnreadCount } from '../../services/notificationService';
 import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
@@ -75,7 +76,21 @@ const HomeScreen = ({ navigation }) => {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState(null);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const loadingMoreRef = useRef(false);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const count = await getUnreadCount();
+        if (active) setUnreadNotifications(count);
+      } catch (_) {}
+    })();
+    return () => {
+      active = false;
+    };
+  }, [refreshKey]);
 
   const load = useCallback(async () => {
     setError(null);
@@ -162,8 +177,13 @@ const HomeScreen = ({ navigation }) => {
           <View style={styles.circle} />
           <Text style={styles.logo}>Circl</Text>
         </View>
-        <TouchableOpacity style={styles.bell} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.bell}
+          activeOpacity={0.7}
+          onPress={() => navigation.navigate('Notifications')}
+        >
           <Icon name="bell-outline" size={24} color={colors.textPrimary} />
+          {unreadNotifications > 0 && <View style={styles.bellBadge} />}
         </TouchableOpacity>
       </View>
       <View style={styles.locationRow}>
@@ -270,6 +290,16 @@ const makeStyles = (colors) =>
       borderRadius: 20,
       alignItems: 'center',
       justifyContent: 'center',
+      position: 'relative',
+    },
+    bellBadge: {
+      position: 'absolute',
+      top: 8,
+      right: 8,
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: colors.danger,
     },
     locationRow: {
       paddingHorizontal: spacing.lg,

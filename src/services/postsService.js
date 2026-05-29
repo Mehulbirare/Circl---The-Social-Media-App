@@ -42,6 +42,23 @@ export async function createPost({ text, imageUrl, lat, lng }) {
     .select()
     .single();
   if (error) throw error;
+
+  try {
+    const { data: followers, error: fErr } = await supabase
+      .from('follows')
+      .select('follower_id')
+      .eq('following_id', user.id);
+    if (!fErr && followers && followers.length > 0) {
+      const inserts = followers.map((f) => ({
+        user_id: f.follower_id,
+        sender_id: user.id,
+        type: 'new_post',
+        post_id: data.id,
+      }));
+      await supabase.from('notifications').insert(inserts);
+    }
+  } catch (_) {}
+
   return data;
 }
 
@@ -93,6 +110,23 @@ export async function toggleLike(postId) {
   await supabase
     .from('post_likes')
     .insert({ post_id: postId, user_id: user.id });
+
+  try {
+    const { data: postData } = await supabase
+      .from('posts')
+      .select('author_id')
+      .eq('id', postId)
+      .single();
+    if (postData && postData.author_id !== user.id) {
+      await supabase.from('notifications').insert({
+        user_id: postData.author_id,
+        sender_id: user.id,
+        type: 'like',
+        post_id: postId,
+      });
+    }
+  } catch (_) {}
+
   return true;
 }
 
@@ -129,5 +163,23 @@ export async function addComment(postId, text) {
     .select('*, author:profiles(id, full_name, avatar_url)')
     .single();
   if (error) throw error;
+
+  try {
+    const { data: postData } = await supabase
+      .from('posts')
+      .select('author_id')
+      .eq('id', postId)
+      .single();
+    if (postData && postData.author_id !== user.id) {
+      await supabase.from('notifications').insert({
+        user_id: postData.author_id,
+        sender_id: user.id,
+        type: 'comment',
+        post_id: postId,
+        text,
+      });
+    }
+  } catch (_) {}
+
   return data;
 }

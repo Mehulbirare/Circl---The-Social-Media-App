@@ -8,3 +8,5 @@ export { default as SkeletonProfile } from './SkeletonProfile';
 export { default as SkeletonComment } from './SkeletonComment';
 export { default as SkeletonPostDetail } from './SkeletonPostDetail';
 export { default as SkeletonEditProfile } from './SkeletonEditProfile';
+export { default as SkeletonNotification } from './SkeletonNotification';
+

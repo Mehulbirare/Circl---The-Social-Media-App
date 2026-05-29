@@ -14,6 +14,7 @@ import FollowListScreen from '../screens/main/FollowListScreen';
 import EditProfileScreen from '../screens/main/EditProfileScreen';
 import SettingsScreen from '../screens/main/SettingsScreen';
 import PostDetailScreen from '../screens/post/PostDetailScreen';
+import NotificationScreen from '../screens/main/NotificationScreen';
 import BottomTabBar from '../components/navigation/BottomTabBar';
 import NotificationBanner from '../components/notifications/NotificationBanner';
 import { useGlobalChatSubscription } from '../hooks/useGlobalChatSubscription';
@@ -47,6 +48,7 @@ const MainNavigator = () => {
         <Stack.Screen name="NewChat" component={NewChatScreen} />
         <Stack.Screen name="UserProfile" component={UserProfileScreen} />
         <Stack.Screen name="FollowList" component={FollowListScreen} />
+        <Stack.Screen name="Notifications" component={NotificationScreen} />
       </Stack.Navigator>
       <NotificationBanner />
     </View>

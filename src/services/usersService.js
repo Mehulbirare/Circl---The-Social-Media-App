@@ -91,6 +91,16 @@ export async function follow(userId) {
     .from('follows')
     .insert({ follower_id: user.id, following_id: userId });
   if (error) throw error;
+
+  try {
+    if (user.id !== userId) {
+      await supabase.from('notifications').insert({
+        user_id: userId,
+        sender_id: user.id,
+        type: 'follow',
+      });
+    }
+  } catch (_) {}
 }
 
 export async function unfollow(userId) {
