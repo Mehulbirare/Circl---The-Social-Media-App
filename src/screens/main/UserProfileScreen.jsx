@@ -8,12 +8,13 @@ import {
   StatusBar,
   ActivityIndicator,
   Alert,
+  Platform,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import Avatar from '../../components/common/Avatar';
-import PostCard from '../../components/feed/PostCard';
 import SkeletonProfile from '../../components/skeleton/SkeletonProfile';
 import { supabase } from '../../lib/supabase';
 import { getProfile, getProfileStats } from '../../services/profileService';
@@ -23,6 +24,8 @@ import { openChat } from '../../services/chatService';
 import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
+import { usePostStore } from '../../store/usePostStore';
+import { thumbnailUrlForVideoUrl } from '../../services/imageService';
 
 const formatRelative = (iso) => {
   if (!iso) return '';
@@ -69,6 +72,8 @@ const UserProfileScreen = ({ route, navigation }) => {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [opening, setOpening] = useState(false);
+  const [activeTab, setActiveTab] = useState('posts');
+  const refreshKey = usePostStore((s) => s.refreshKey);
 
   useEffect(() => {
     if (!userId) return undefined;
@@ -103,7 +108,7 @@ const UserProfileScreen = ({ route, navigation }) => {
     return () => {
       active = false;
     };
-  }, [userId]);
+  }, [userId, refreshKey]);
 
   const handleToggleFollow = async () => {
     if (busy) return;
@@ -164,176 +169,276 @@ const UserProfileScreen = ({ route, navigation }) => {
   const city = profile?.city;
   const region = profile?.region;
 
-  const Stat = ({ value, label, onPress }) => {
-    const content = (
-      <>
-        <Text style={styles.statValue}>{value}</Text>
-        <Text style={styles.statLabel}>{label}</Text>
-      </>
-    );
-    if (!onPress) return <View style={styles.stat}>{content}</View>;
-    return (
-      <TouchableOpacity style={styles.stat} activeOpacity={0.7} onPress={onPress}>
-        {content}
-      </TouchableOpacity>
-    );
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'posts':
+        return posts.length === 0 ? (
+          <View style={styles.emptyWrap}>
+            <Icon
+              name="image-multiple-outline"
+              size={40}
+              color={colors.textSecondary}
+              style={styles.emptyIcon}
+            />
+            <Text style={styles.empty}>No posts yet.</Text>
+          </View>
+        ) : (
+          <View style={styles.grid}>
+            {posts.map((post) => {
+              const isVideo = post.imageUrl && /\.(mp4|mov|m4v|webm|3gp)(\?|$)/i.test(post.imageUrl);
+              const thumbUrl = isVideo ? thumbnailUrlForVideoUrl(post.imageUrl) : null;
+              const mediaUri = isVideo ? (thumbUrl || post.imageUrl) : post.imageUrl;
+
+              return (
+                <TouchableOpacity
+                  key={post.id}
+                  style={styles.gridItem}
+                  activeOpacity={0.85}
+                  onPress={() => navigation.navigate('PostDetail', { post })}
+                >
+                  {post.imageUrl ? (
+                    <Image source={{ uri: mediaUri }} style={styles.gridImage} />
+                  ) : (
+                    <View style={styles.gridTextContainer}>
+                      <Text style={styles.gridText} numberOfLines={4}>
+                        {post.text}
+                      </Text>
+                    </View>
+                  )}
+                  {isVideo && (
+                    <View style={styles.videoBadge}>
+                      <Icon name="play" size={14} color="#FFFFFF" />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        );
+      case 'about':
+        return (
+          <View style={styles.aboutContainer}>
+            {city ? (
+              <View style={styles.aboutRow}>
+                <View style={styles.aboutIconContainer}>
+                  <Icon name="map-marker-outline" size={20} color={colors.textSecondary} />
+                </View>
+                <View style={styles.aboutContent}>
+                  <Text style={styles.aboutLabel}>Location</Text>
+                  <Text style={styles.aboutValue}>
+                    {region ? `${city}, ${region}` : city}
+                  </Text>
+                </View>
+              </View>
+            ) : null}
+
+            <View style={styles.aboutRow}>
+              <View style={styles.aboutIconContainer}>
+                <Icon name="calendar-blank-outline" size={20} color={colors.textSecondary} />
+              </View>
+              <View style={styles.aboutContent}>
+                <Text style={styles.aboutLabel}>Joined</Text>
+                <Text style={styles.aboutValue}>
+                  {profile?.created_at
+                    ? new Date(profile.created_at).toLocaleDateString('en-US', {
+                        month: 'long',
+                        year: 'numeric',
+                      })
+                    : 'Unknown'}
+                </Text>
+              </View>
+            </View>
+
+            {profile?.gender ? (
+              <View style={styles.aboutRow}>
+                <View style={styles.aboutIconContainer}>
+                  <Icon name="gender-male-female" size={20} color={colors.textSecondary} />
+                </View>
+                <View style={styles.aboutContent}>
+                  <Text style={styles.aboutLabel}>Gender</Text>
+                  <Text style={styles.aboutValue}>
+                    {profile.gender.charAt(0).toUpperCase() + profile.gender.slice(1)}
+                  </Text>
+                </View>
+              </View>
+            ) : null}
+          </View>
+        );
+      default:
+        return null;
+    }
   };
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <LinearGradient
-          colors={['#0E7A57', '#1D9E75', '#34C896']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.hero}
-        >
-          <SafeAreaView edges={['top']} style={styles.heroSafe}>
-            <View style={styles.topBar}>
-              <TouchableOpacity
-                style={styles.iconBtn}
-                activeOpacity={0.7}
-                onPress={() => navigation.goBack()}
-                hitSlop={12}
-              >
-                <Icon name="arrow-left" size={20} color="#FFFFFF" />
-              </TouchableOpacity>
-              <Text style={styles.topTitle} numberOfLines={1}>
-                {name}
-              </Text>
-              <View style={styles.iconBtnGhost} />
-            </View>
-
-            <View style={styles.heroBody}>
-              <View style={styles.avatarRing}>
-                <View style={styles.avatarInner}>
-                  <Avatar name={name} size={96} uri={avatar} />
-                </View>
-              </View>
-              <Text style={styles.name}>{name}</Text>
-              {city ? (
-                <View style={styles.locPill}>
-                  <Icon name="map-marker" size={14} color="#FFFFFF" />
-                  <Text style={styles.locText}>
-                    {region ? `${city}, ${region}` : city}
-                  </Text>
-                </View>
-              ) : null}
-              {bio ? <Text style={styles.bio}>{bio}</Text> : null}
-            </View>
+        <View style={styles.coverBanner}>
+          <LinearGradient
+            colors={colors.mode === 'dark' ? ['#0A3B2B', '#071510'] : ['#1D9E75', '#0E7A57']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
+          />
+          <SafeAreaView edges={['top']} style={styles.topBar}>
+            <TouchableOpacity
+              style={styles.iconBtn}
+              activeOpacity={0.7}
+              onPress={() => navigation.goBack()}
+              hitSlop={12}
+            >
+              <Icon name="arrow-left" size={20} color="#FFFFFF" />
+            </TouchableOpacity>
+            <Text style={styles.topTitle} numberOfLines={1}>
+              {name}
+            </Text>
+            <View style={styles.iconBtnGhost} />
           </SafeAreaView>
-        </LinearGradient>
+        </View>
 
-        <View style={styles.statsCardWrap}>
-          <View style={styles.statsCard}>
-            <Stat value={String(stats.posts)} label="Posts" />
-            <View style={styles.statDivider} />
-            <Stat
-              value={String(stats.followers)}
-              label="Followers"
+        <View style={styles.profileHeader}>
+          <View style={styles.avatarRow}>
+            <View style={styles.avatarContainer}>
+              <Avatar name={name} size={90} uri={avatar} />
+            </View>
+            {isSelf ? (
+              <TouchableOpacity
+                style={styles.editBtn}
+                activeOpacity={0.8}
+                onPress={() => navigation.navigate('EditProfile')}
+              >
+                <Text style={styles.editBtnText}>Edit profile</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.actionsRow}>
+                <TouchableOpacity
+                  style={[styles.actionBtn, following ? styles.btnOutline : styles.btnSolid]}
+                  activeOpacity={0.85}
+                  onPress={handleToggleFollow}
+                  disabled={busy}
+                >
+                  {following ? (
+                    <>
+                      <Icon name="check" size={16} color={colors.textPrimary} style={styles.btnIcon} />
+                      <Text style={styles.btnOutlineText}>Following</Text>
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="account-plus-outline" size={16} color="#FFFFFF" style={styles.btnIcon} />
+                      <Text style={styles.btnSolidText}>Follow</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.actionBtn, styles.btnSecondary]}
+                  activeOpacity={0.85}
+                  onPress={handleMessage}
+                  disabled={opening}
+                >
+                  {opening ? (
+                    <ActivityIndicator size="small" color={colors.primary} />
+                  ) : (
+                    <>
+                      <Icon
+                        name="message-text-outline"
+                        size={16}
+                        color={colors.primary}
+                        style={styles.btnIcon}
+                      />
+                      <Text style={styles.btnSecondaryText}>Message</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+
+          <Text style={styles.name}>{name}</Text>
+
+          <View style={styles.metaRow}>
+            {city ? (
+              <View style={styles.metaItem}>
+                <Icon name="map-marker-outline" size={14} color={colors.textSecondary} />
+                <Text style={styles.metaText}>
+                  {region ? `${city}, ${region}` : city}
+                </Text>
+              </View>
+            ) : null}
+            {profile?.created_at ? (
+              <View style={styles.metaItem}>
+                <Icon name="calendar-blank-outline" size={14} color={colors.textSecondary} />
+                <Text style={styles.metaText}>
+                  Joined {new Date(profile.created_at).toLocaleDateString('en-US', {
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+
+          {bio ? <Text style={styles.bio}>{bio}</Text> : null}
+
+          <View style={styles.statsRow}>
+            <TouchableOpacity
+              style={styles.statItem}
+              activeOpacity={0.7}
+              onPress={() => setActiveTab('posts')}
+            >
+              <Text style={styles.statNumber}>{stats.posts}</Text>
+              <Text style={styles.statLabel}>posts</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.statItem}
+              activeOpacity={0.7}
               onPress={() =>
                 navigation.push('FollowList', { userId, mode: 'followers' })
               }
-            />
-            <View style={styles.statDivider} />
-            <Stat
-              value={String(stats.following)}
-              label="Following"
+            >
+              <Text style={styles.statNumber}>{stats.followers}</Text>
+              <Text style={styles.statLabel}>followers</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.statItem}
+              activeOpacity={0.7}
               onPress={() =>
                 navigation.push('FollowList', { userId, mode: 'following' })
               }
-            />
+            >
+              <Text style={styles.statNumber}>{stats.following}</Text>
+              <Text style={styles.statLabel}>following</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
-        <View style={styles.body}>
-          {!isSelf ? (
-            <View style={styles.actionRow}>
-              <TouchableOpacity
-                style={styles.flex}
-                activeOpacity={0.9}
-                onPress={handleToggleFollow}
-                disabled={busy}
-              >
-                {following ? (
-                  <View style={styles.followingBtn}>
-                    <Icon name="check" size={18} color={colors.primary} />
-                    <Text style={styles.followingText}>Following</Text>
-                  </View>
-                ) : (
-                  <LinearGradient
-                    colors={['#1D9E75', '#0E7A57']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                    style={styles.followBtn}
-                  >
-                    <Icon name="account-plus" size={18} color="#FFFFFF" />
-                    <Text style={styles.followText}>Follow</Text>
-                  </LinearGradient>
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.messageBtn}
-                activeOpacity={0.85}
-                onPress={handleMessage}
-                disabled={opening}
-              >
-                {opening ? (
-                  <ActivityIndicator color={colors.primary} />
-                ) : (
-                  <>
-                    <Icon
-                      name="message-text-outline"
-                      size={18}
-                      color={colors.primary}
-                    />
-                    <Text style={styles.messageText}>Message</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <TouchableOpacity
-              activeOpacity={0.9}
-              onPress={() => navigation.navigate('EditProfile')}
-            >
-              <LinearGradient
-                colors={['#1D9E75', '#0E7A57']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.followBtn}
-              >
-                <Icon name="pencil-outline" size={18} color="#FFFFFF" />
-                <Text style={styles.followText}>Edit profile</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          )}
-
-          <Text style={styles.sectionTitle}>Posts</Text>
-          {posts.length === 0 ? (
-            <View style={styles.emptyWrap}>
-              <Icon
-                name="image-multiple-outline"
-                size={32}
-                color={colors.textSecondary}
-              />
-              <Text style={styles.empty}>No posts yet.</Text>
-            </View>
-          ) : (
-            posts.map((post) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                onPress={() => navigation.navigate('PostDetail', { post })}
-                onComment={() => navigation.navigate('PostDetail', { post })}
-              />
-            ))
-          )}
+        <View style={styles.tabBar}>
+          <TouchableOpacity
+            style={[styles.tabItem, activeTab === 'posts' && styles.activeTabItem]}
+            onPress={() => setActiveTab('posts')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.tabLabel, activeTab === 'posts' && styles.activeTabLabel]}>
+              Posts
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tabItem, activeTab === 'about' && styles.activeTabItem]}
+            onPress={() => setActiveTab('about')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.tabLabel, activeTab === 'about' && styles.activeTabLabel]}>
+              About
+            </Text>
+          </TouchableOpacity>
         </View>
+
+        <View style={styles.tabContentContainer}>{renderTabContent()}</View>
       </ScrollView>
     </View>
   );
@@ -345,23 +450,19 @@ const makeStyles = (colors) =>
       flex: 1,
       backgroundColor: colors.background,
     },
-    flex: { flex: 1 },
     scroll: {
       paddingBottom: spacing.huge,
     },
-    hero: {
-      paddingBottom: spacing.huge + spacing.xl,
-      borderBottomLeftRadius: 36,
-      borderBottomRightRadius: 36,
-    },
-    heroSafe: {
-      paddingHorizontal: spacing.xl,
+    coverBanner: {
+      height: 140,
+      position: 'relative',
     },
     topBar: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingTop: spacing.sm,
+      paddingHorizontal: spacing.xl,
+      paddingTop: Platform.OS === 'ios' ? spacing.sm : spacing.lg,
     },
     topTitle: {
       flex: 1,
@@ -376,9 +477,9 @@ const makeStyles = (colors) =>
       width: 38,
       height: 38,
       borderRadius: 19,
-      backgroundColor: 'rgba(255,255,255,0.2)',
+      backgroundColor: 'rgba(255,255,255,0.15)',
       borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.25)',
+      borderColor: 'rgba(255,255,255,0.2)',
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -386,169 +487,264 @@ const makeStyles = (colors) =>
       width: 38,
       height: 38,
     },
-    heroBody: {
-      alignItems: 'center',
-      marginTop: spacing.xl,
+    profileHeader: {
+      paddingHorizontal: spacing.xl,
+      marginTop: -45,
+      marginBottom: spacing.sm,
     },
-    avatarRing: {
-      width: 116,
-      height: 116,
-      borderRadius: 58,
-      backgroundColor: 'rgba(255,255,255,0.15)',
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.3)',
+    avatarRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-end',
     },
-    avatarInner: {
-      width: 104,
-      height: 104,
-      borderRadius: 52,
-      backgroundColor: 'rgba(255,255,255,0.25)',
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderWidth: 3,
-      borderColor: '#FFFFFF',
+    avatarContainer: {
+      borderWidth: 4,
+      borderColor: colors.card,
+      borderRadius: 49,
+      backgroundColor: colors.card,
+      shadowColor: colors.shadow,
+      shadowOpacity: 0.15,
+      shadowOffset: { width: 0, height: 4 },
+      shadowRadius: 8,
+      elevation: 5,
     },
-    name: {
-      marginTop: spacing.md,
-      fontSize: 24,
+    editBtn: {
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      borderRadius: 20,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm - 2,
+      backgroundColor: colors.card,
+    },
+    editBtnText: {
+      color: colors.textPrimary,
+      fontSize: typography.size.sm + 1,
       fontWeight: typography.weight.bold,
-      color: '#FFFFFF',
-      letterSpacing: -0.3,
     },
-    locPill: {
+    actionsRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: 'rgba(255,255,255,0.2)',
-      borderRadius: 999,
-      paddingHorizontal: spacing.md,
-      paddingVertical: 4,
-      marginTop: spacing.sm,
-      borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.25)',
     },
-    locText: {
+    actionBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: spacing.sm - 2,
+      paddingHorizontal: spacing.md + 2,
+      borderRadius: 20,
+      marginLeft: spacing.sm,
+    },
+    btnSolid: {
+      backgroundColor: colors.primary,
+    },
+    btnSolidText: {
       color: '#FFFFFF',
+      fontSize: typography.size.sm + 1,
+      fontWeight: typography.weight.bold,
+    },
+    btnOutline: {
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+    },
+    btnOutlineText: {
+      color: colors.textPrimary,
+      fontSize: typography.size.sm + 1,
+      fontWeight: typography.weight.bold,
+    },
+    btnSecondary: {
+      backgroundColor: colors.primaryLight,
+    },
+    btnSecondaryText: {
+      color: colors.primary,
+      fontSize: typography.size.sm + 1,
+      fontWeight: typography.weight.bold,
+    },
+    name: {
+      fontSize: 22,
+      fontWeight: typography.weight.bold,
+      color: colors.textPrimary,
+      marginTop: spacing.md,
+      letterSpacing: -0.3,
+    },
+    metaRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      marginTop: spacing.sm,
+    },
+    metaItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginRight: spacing.lg,
+      marginBottom: spacing.xs,
+    },
+    metaText: {
+      color: colors.textSecondary,
       fontSize: typography.size.sm,
       marginLeft: 4,
       fontWeight: typography.weight.medium,
     },
     bio: {
-      color: 'rgba(255,255,255,0.85)',
+      color: colors.textPrimary,
       fontSize: typography.size.md,
-      marginTop: spacing.md,
-      textAlign: 'center',
-      paddingHorizontal: spacing.lg,
       lineHeight: 20,
+      marginTop: spacing.sm,
     },
-    statsCardWrap: {
-      marginTop: -spacing.xl - spacing.lg,
-      paddingHorizontal: spacing.xl,
-    },
-    statsCard: {
+    statsRow: {
       flexDirection: 'row',
-      backgroundColor: colors.card,
-      borderRadius: 18,
-      paddingVertical: spacing.lg,
-      shadowColor: '#0E7A57',
-      shadowOpacity: 0.18,
-      shadowOffset: { width: 0, height: 8 },
-      shadowRadius: 18,
-      elevation: 6,
-    },
-    stat: {
-      flex: 1,
       alignItems: 'center',
+      paddingVertical: spacing.md,
+      borderTopWidth: 1,
+      borderBottomWidth: 1,
+      borderColor: colors.border,
+      marginTop: spacing.md,
     },
-    statDivider: {
-      width: 1,
-      backgroundColor: colors.border,
+    statItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginRight: spacing.xl,
     },
-    statValue: {
-      fontSize: 20,
+    statNumber: {
+      fontSize: typography.size.md,
       fontWeight: typography.weight.bold,
       color: colors.textPrimary,
-      letterSpacing: -0.3,
     },
     statLabel: {
       fontSize: typography.size.sm,
       color: colors.textSecondary,
-      marginTop: 2,
+      marginLeft: 4,
     },
-    body: {
-      paddingHorizontal: spacing.xl,
-      marginTop: spacing.xl,
-    },
-    actionRow: {
+    tabBar: {
       flexDirection: 'row',
-      alignItems: 'center',
+      borderBottomWidth: 1,
+      borderColor: colors.border,
+      marginTop: spacing.md,
     },
-    followBtn: {
-      flexDirection: 'row',
+    tabItem: {
+      flex: 1,
       alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: spacing.md + 2,
-      borderRadius: 14,
-      shadowColor: '#1D9E75',
-      shadowOpacity: 0.3,
-      shadowOffset: { width: 0, height: 6 },
-      shadowRadius: 10,
-      elevation: 4,
+      paddingVertical: spacing.md,
+      borderBottomWidth: 2,
+      borderBottomColor: 'transparent',
     },
-    followText: {
-      color: '#FFFFFF',
+    activeTabItem: {
+      borderBottomColor: colors.primary,
+    },
+    tabLabel: {
       fontSize: typography.size.md,
-      fontWeight: typography.weight.bold,
-      marginLeft: spacing.sm,
+      fontWeight: typography.weight.medium,
+      color: colors.textSecondary,
     },
-    followingBtn: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: spacing.md + 2,
-      borderRadius: 14,
-      backgroundColor: 'transparent',
-      borderWidth: 1.5,
-      borderColor: colors.primary,
-    },
-    followingText: {
+    activeTabLabel: {
       color: colors.primary,
-      fontSize: typography.size.md,
       fontWeight: typography.weight.bold,
-      marginLeft: spacing.sm,
     },
-    messageBtn: {
+    tabContentContainer: {
+      paddingTop: spacing.sm,
+    },
+    grid: {
       flexDirection: 'row',
-      alignItems: 'center',
+      flexWrap: 'wrap',
+      paddingHorizontal: spacing.sm,
+      marginTop: spacing.xs,
+    },
+    gridItem: {
+      width: '33.33%',
+      aspectRatio: 1,
+      padding: 1,
+      position: 'relative',
+    },
+    gridImage: {
+      width: '100%',
+      height: '100%',
+      borderRadius: 4,
+      backgroundColor: colors.border,
+    },
+    gridTextContainer: {
+      width: '100%',
+      height: '100%',
+      borderRadius: 4,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: spacing.sm,
       justifyContent: 'center',
-      paddingVertical: spacing.md + 2,
-      paddingHorizontal: spacing.lg,
-      borderRadius: 14,
-      marginLeft: spacing.md,
-      backgroundColor: colors.primaryLight,
+      alignItems: 'center',
     },
-    messageText: {
-      color: colors.primary,
-      fontSize: typography.size.md,
-      fontWeight: typography.weight.bold,
-      marginLeft: spacing.sm,
-    },
-    sectionTitle: {
-      fontSize: typography.size.lg,
-      fontWeight: typography.weight.bold,
+    gridText: {
+      fontSize: 10,
       color: colors.textPrimary,
-      marginTop: spacing.xl,
-      marginBottom: spacing.md,
+      textAlign: 'center',
+      lineHeight: 14,
+      fontWeight: typography.weight.medium,
+    },
+    videoBadge: {
+      position: 'absolute',
+      top: 6,
+      right: 6,
+      backgroundColor: 'rgba(0,0,0,0.6)',
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     emptyWrap: {
       alignItems: 'center',
-      paddingVertical: spacing.xl,
+      justifyContent: 'center',
+      paddingVertical: spacing.massive,
+      paddingHorizontal: spacing.xxl,
+    },
+    emptyIcon: {
+      opacity: 0.6,
+      marginBottom: spacing.sm,
     },
     empty: {
-      fontSize: typography.size.sm,
-      color: colors.textSecondary,
+      fontSize: typography.size.md,
+      fontWeight: typography.weight.bold,
+      color: colors.textPrimary,
       marginTop: spacing.sm,
+      textAlign: 'center',
+    },
+    btnIcon: {
+      marginRight: 4,
+    },
+    aboutContainer: {
+      paddingHorizontal: spacing.xl,
+      paddingTop: spacing.md,
+    },
+    aboutRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: spacing.lg,
+      borderBottomWidth: 1,
+      borderColor: colors.border,
+    },
+    aboutIconContainer: {
+      width: 40,
+      height: 40,
+      borderRadius: 10,
+      backgroundColor: colors.primaryLight,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: spacing.lg,
+    },
+    aboutContent: {
+      flex: 1,
+    },
+    aboutLabel: {
+      fontSize: typography.size.xs,
+      color: colors.textSecondary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      fontWeight: typography.weight.bold,
+    },
+    aboutValue: {
+      fontSize: typography.size.md,
+      color: colors.textPrimary,
+      fontWeight: typography.weight.medium,
+      marginTop: 2,
     },
   });
 

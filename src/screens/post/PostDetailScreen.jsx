@@ -10,6 +10,7 @@ import {
   Platform,
   Alert,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -22,9 +23,11 @@ import {
   hasLiked,
   toggleLike,
   addComment,
+  deletePost,
 } from '../../services/postsService';
 import { thumbnailUrlForVideoUrl } from '../../services/imageService';
 import { usePostStore } from '../../store/usePostStore';
+import { useAuthStore } from '../../store/useAuthStore';
 import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
@@ -49,13 +52,43 @@ const PostDetailScreen = ({ route, navigation }) => {
   const initialPost = route?.params?.post || {};
   const postId = initialPost.id;
 
+  const user = useAuthStore((s) => s.user);
+  const bumpRefresh = usePostStore((s) => s.bumpRefresh);
   const [post, setPost] = useState(initialPost);
   const [comments, setComments] = useState([]);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
   const [thumbFailed, setThumbFailed] = useState(false);
   const setPostComments = usePostStore((s) => s.setPostComments);
+
+  const handleDelete = () => {
+    Alert.alert(
+      'Delete Post',
+      'Are you sure you want to delete this post?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true);
+            try {
+              await deletePost(postId);
+              bumpRefresh();
+              navigation.goBack();
+            } catch (err) {
+              Alert.alert('Could not delete post', err.message || 'Please try again.');
+            } finally {
+              setDeleting(false);
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
 
   useEffect(() => {
     if (!postId) return undefined;
@@ -139,9 +172,24 @@ const PostDetailScreen = ({ route, navigation }) => {
           <Icon name="arrow-left" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Post</Text>
-        <View style={styles.backBtn} />
+        {user?.id === post.author_id ? (
+          <TouchableOpacity
+            onPress={handleDelete}
+            activeOpacity={0.7}
+            style={styles.rightBtn}
+          >
+            <Icon name="trash-can-outline" size={24} color={colors.danger} />
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.backBtn} />
+        )}
       </View>
-      {loading ? (
+      {deleting ? (
+        <SafeAreaView style={[styles.container, styles.center]} edges={['bottom']}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.deletingText}>Deleting post...</Text>
+        </SafeAreaView>
+      ) : loading ? (
         <SkeletonPostDetail />
       ) : (
         <KeyboardAvoidingView
@@ -391,6 +439,20 @@ const makeStyles = (colors) =>
     },
     sendBtnDisabled: {
       opacity: 0.5,
+    },
+    rightBtn: {
+      width: 24,
+      alignItems: 'flex-end',
+    },
+    center: {
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    deletingText: {
+      color: colors.textSecondary,
+      fontSize: typography.size.md,
+      marginTop: spacing.md,
+      fontWeight: typography.weight.medium,
     },
   });
 

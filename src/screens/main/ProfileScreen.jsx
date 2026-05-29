@@ -7,21 +7,24 @@ import {
   TouchableOpacity,
   StatusBar,
   Alert,
+  Platform,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
 import Avatar from '../../components/common/Avatar';
-import PostCard from '../../components/feed/PostCard';
 import SkeletonProfile from '../../components/skeleton/SkeletonProfile';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useLocationStore } from '../../store/useLocationStore';
+import { usePostStore } from '../../store/usePostStore';
 import { getMyProfile, getProfileStats } from '../../services/profileService';
 import { getPostsByAuthor } from '../../services/postsService';
 import { signOut } from '../../services/authService';
 import { useColors, useThemedStyles } from '../../theme/useColors';
 import { spacing } from '../../theme/spacing';
 import { typography } from '../../theme/typography';
+import { thumbnailUrlForVideoUrl } from '../../services/imageService';
 
 const formatRelative = (iso) => {
   if (!iso) return '';
@@ -60,9 +63,11 @@ const ProfileScreen = ({ navigation }) => {
   const login = useAuthStore((s) => s.login);
   const storeCity = useLocationStore((s) => s.city);
   const storeRegion = useLocationStore((s) => s.region);
+  const refreshKey = usePostStore((s) => s.refreshKey);
   const [stats, setStats] = useState({ posts: 0, followers: 0, following: 0 });
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('posts');
 
   useEffect(() => {
     let active = true;
@@ -85,7 +90,7 @@ const ProfileScreen = ({ navigation }) => {
     return () => {
       active = false;
     };
-  }, [login]);
+  }, [login, refreshKey]);
 
   const handleLogout = async () => {
     try {
@@ -105,224 +110,279 @@ const ProfileScreen = ({ navigation }) => {
   }
 
   const name = user?.full_name || 'You';
-  const bio =
-    user?.bio || 'Building communities, one neighbourhood at a time.';
+  const bio = user?.bio || 'Building communities, one neighbourhood at a time.';
   const avatar = user?.avatar_url || null;
   const city = user?.city || storeCity;
   const region = user?.region || storeRegion;
 
-  const actionCards = [
-    {
-      key: 'posts',
-      label: 'Posts',
-      value: String(stats.posts),
-      icon: 'image-multiple',
-      gradient: ['#1D9E75', '#0E7A57'],
-    },
-    {
-      key: 'saved',
-      label: 'Saved',
-      value: '12',
-      icon: 'bookmark',
-      gradient: ['#F59E0B', '#D97706'],
-    },
-    {
-      key: 'events',
-      label: 'Events',
-      value: '3',
-      icon: 'calendar-star',
-      gradient: ['#8B5CF6', '#6D28D9'],
-    },
-    {
-      key: 'friends',
-      label: 'Friends',
-      value: String(stats.following),
-      icon: 'account-group',
-      gradient: ['#3B82F6', '#1D4ED8'],
-    },
-  ];
+  const joinedDate = user?.created_at
+    ? new Date(user.created_at).toLocaleDateString('en-US', {
+        month: 'long',
+        year: 'numeric',
+      })
+    : '';
 
-  const Stat = ({ value, label, onPress }) => {
-    const content = (
-      <>
-        <Text style={styles.statValue}>{value}</Text>
-        <Text style={styles.statLabel}>{label}</Text>
-      </>
-    );
-    if (!onPress) return <View style={styles.stat}>{content}</View>;
-    return (
-      <TouchableOpacity style={styles.stat} activeOpacity={0.7} onPress={onPress}>
-        {content}
-      </TouchableOpacity>
-    );
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'posts':
+        return posts.length === 0 ? (
+          <View style={styles.emptyWrap}>
+            <Icon
+              name="image-multiple-outline"
+              size={40}
+              color={colors.textSecondary}
+              style={styles.emptyIcon}
+            />
+            <Text style={styles.empty}>You haven't posted yet.</Text>
+          </View>
+        ) : (
+          <View style={styles.grid}>
+            {posts.map((post) => {
+              const isVideo = post.imageUrl && /\.(mp4|mov|m4v|webm|3gp)(\?|$)/i.test(post.imageUrl);
+              const thumbUrl = isVideo ? thumbnailUrlForVideoUrl(post.imageUrl) : null;
+              const mediaUri = isVideo ? (thumbUrl || post.imageUrl) : post.imageUrl;
+
+              return (
+                <TouchableOpacity
+                  key={post.id}
+                  style={styles.gridItem}
+                  activeOpacity={0.85}
+                  onPress={() => navigation.navigate('PostDetail', { post })}
+                >
+                  {post.imageUrl ? (
+                    <Image source={{ uri: mediaUri }} style={styles.gridImage} />
+                  ) : (
+                    <View style={styles.gridTextContainer}>
+                      <Text style={styles.gridText} numberOfLines={4}>
+                        {post.text}
+                      </Text>
+                    </View>
+                  )}
+                  {isVideo && (
+                    <View style={styles.videoBadge}>
+                      <Icon name="play" size={14} color="#FFFFFF" />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        );
+      case 'saved':
+        return (
+          <View style={styles.emptyWrap}>
+            <Icon
+              name="bookmark-outline"
+              size={40}
+              color={colors.textSecondary}
+              style={styles.emptyIcon}
+            />
+            <Text style={styles.empty}>No saved posts</Text>
+            <Text style={styles.emptySub}>Posts you save will appear here.</Text>
+          </View>
+        );
+      case 'about':
+        return (
+          <View style={styles.aboutContainer}>
+            <View style={styles.aboutRow}>
+              <View style={styles.aboutIconContainer}>
+                <Icon name="email-outline" size={20} color={colors.textSecondary} />
+              </View>
+              <View style={styles.aboutContent}>
+                <Text style={styles.aboutLabel}>Email</Text>
+                <Text style={styles.aboutValue}>{user?.email || 'Not specified'}</Text>
+              </View>
+            </View>
+
+            <View style={styles.aboutRow}>
+              <View style={styles.aboutIconContainer}>
+                <Icon name="phone-outline" size={20} color={colors.textSecondary} />
+              </View>
+              <View style={styles.aboutContent}>
+                <Text style={styles.aboutLabel}>Mobile</Text>
+                <Text style={styles.aboutValue}>{user?.mobile || 'Not specified'}</Text>
+              </View>
+            </View>
+
+            <View style={styles.aboutRow}>
+              <View style={styles.aboutIconContainer}>
+                <Icon name="cake-variant-outline" size={20} color={colors.textSecondary} />
+              </View>
+              <View style={styles.aboutContent}>
+                <Text style={styles.aboutLabel}>Birthday</Text>
+                <Text style={styles.aboutValue}>
+                  {user?.dob
+                    ? new Date(user.dob).toLocaleDateString(undefined, {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                      })
+                    : 'Not specified'}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.aboutRow}>
+              <View style={styles.aboutIconContainer}>
+                <Icon name="gender-male-female" size={20} color={colors.textSecondary} />
+              </View>
+              <View style={styles.aboutContent}>
+                <Text style={styles.aboutLabel}>Gender</Text>
+                <Text style={styles.aboutValue}>
+                  {user?.gender
+                    ? user.gender.charAt(0).toUpperCase() + user.gender.slice(1)
+                    : 'Not specified'}
+                </Text>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              style={styles.logoutBtn}
+              onPress={handleLogout}
+              activeOpacity={0.85}
+            >
+              <Icon name="logout" size={18} color={colors.danger} />
+              <Text style={styles.logoutText}>Log out</Text>
+            </TouchableOpacity>
+          </View>
+        );
+      default:
+        return null;
+    }
   };
-
-  const MenuRow = ({ icon, label, tint }) => (
-    <TouchableOpacity style={styles.menuRow} activeOpacity={0.7}>
-      <View style={[styles.menuIcon, { backgroundColor: tint + '1A' }]}>
-        <Icon name={icon} size={18} color={tint} />
-      </View>
-      <Text style={styles.menuLabel}>{label}</Text>
-      <Icon name="chevron-right" size={20} color={colors.textSecondary} />
-    </TouchableOpacity>
-  );
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       <ScrollView
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <LinearGradient
-          colors={['#0E7A57', '#1D9E75', '#34C896']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.hero}
-        >
-          <SafeAreaView edges={['top']} style={styles.heroSafe}>
-            <View style={styles.topBar}>
-              <Text style={styles.topTitle}>Profile</Text>
-              <TouchableOpacity
-                style={styles.iconBtn}
-                activeOpacity={0.7}
-                onPress={() => navigation.navigate('Settings')}
-              >
-                <Icon name="cog-outline" size={20} color="#FFFFFF" />
-              </TouchableOpacity>
-            </View>
+        <View style={styles.coverBanner}>
+          <LinearGradient
+            colors={colors.mode === 'dark' ? ['#0A3B2B', '#071510'] : ['#1D9E75', '#0E7A57']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFillObject}
+          />
+          <SafeAreaView edges={['top']} style={styles.topBar}>
+            <Text style={styles.topTitle}>Profile</Text>
+            <TouchableOpacity
+              style={styles.iconBtn}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate('Settings')}
+            >
+              <Icon name="cog-outline" size={20} color="#FFFFFF" />
+            </TouchableOpacity>
+          </SafeAreaView>
+        </View>
 
-            <View style={styles.heroBody}>
-              <View style={styles.avatarRing}>
-                <View style={styles.avatarInner}>
-                  <Avatar name={name} size={96} uri={avatar} />
-                </View>
-              </View>
-              <Text style={styles.name}>{name}</Text>
-              <View style={styles.locPill}>
-                <Icon name="map-marker" size={14} color="#FFFFFF" />
-                <Text style={styles.locText}>
-                  {city ? `${city}, ${region}` : 'Locating…'}
+        <View style={styles.profileHeader}>
+          <View style={styles.avatarRow}>
+            <View style={styles.avatarContainer}>
+              <Avatar name={name} size={90} uri={avatar} />
+            </View>
+            <TouchableOpacity
+              style={styles.editBtn}
+              activeOpacity={0.8}
+              onPress={() => navigation.navigate('EditProfile')}
+            >
+              <Text style={styles.editBtnText}>Edit profile</Text>
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.name}>{name}</Text>
+
+          <View style={styles.metaRow}>
+            {city ? (
+              <View style={styles.metaItem}>
+                <Icon name="map-marker-outline" size={14} color={colors.textSecondary} />
+                <Text style={styles.metaText}>
+                  {city}, {region}
                 </Text>
               </View>
-              <Text style={styles.bio}>{bio}</Text>
-            </View>
-          </SafeAreaView>
-        </LinearGradient>
+            ) : null}
+            {joinedDate ? (
+              <View style={styles.metaItem}>
+                <Icon name="calendar-blank-outline" size={14} color={colors.textSecondary} />
+                <Text style={styles.metaText}>Joined {joinedDate}</Text>
+              </View>
+            ) : null}
+          </View>
 
-        <View style={styles.statsCardWrap}>
-          <View style={styles.statsCard}>
-            <Stat value={String(stats.posts)} label="Posts" />
-            <View style={styles.statDivider} />
-            <Stat
-              value={String(stats.followers)}
-              label="Followers"
+          <Text style={styles.bio}>{bio}</Text>
+
+          <View style={styles.statsRow}>
+            <TouchableOpacity
+              style={styles.statItem}
+              activeOpacity={0.7}
+              onPress={() => setActiveTab('posts')}
+            >
+              <Text style={styles.statNumber}>{stats.posts}</Text>
+              <Text style={styles.statLabel}>posts</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.statItem}
+              activeOpacity={0.7}
               onPress={() =>
                 navigation.navigate('FollowList', {
                   userId: user?.id,
                   mode: 'followers',
                 })
               }
-            />
-            <View style={styles.statDivider} />
-            <Stat
-              value={String(stats.following)}
-              label="Following"
+            >
+              <Text style={styles.statNumber}>{stats.followers}</Text>
+              <Text style={styles.statLabel}>followers</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.statItem}
+              activeOpacity={0.7}
               onPress={() =>
                 navigation.navigate('FollowList', {
                   userId: user?.id,
                   mode: 'following',
                 })
               }
-            />
-          </View>
-        </View>
-
-        <View style={styles.body}>
-          <TouchableOpacity
-            activeOpacity={0.9}
-            onPress={() => navigation.navigate('EditProfile')}
-          >
-            <LinearGradient
-              colors={['#1D9E75', '#0E7A57']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.editBtn}
             >
-              <Icon name="pencil-outline" size={18} color="#FFFFFF" />
-              <Text style={styles.editText}>Edit profile</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-
-          <View style={styles.grid}>
-            {actionCards.map((card) => (
-              <TouchableOpacity
-                key={card.key}
-                style={styles.actionShadow}
-                activeOpacity={0.85}
-              >
-                <LinearGradient
-                  colors={card.gradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.actionCard}
-                >
-                  <View style={styles.actionIcon}>
-                    <Icon name={card.icon} size={22} color="#FFFFFF" />
-                  </View>
-                  <Text style={styles.actionValue}>{card.value}</Text>
-                  <Text style={styles.actionLabel}>{card.label}</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            ))}
+              <Text style={styles.statNumber}>{stats.following}</Text>
+              <Text style={styles.statLabel}>following</Text>
+            </TouchableOpacity>
           </View>
+        </View>
 
-          <View style={styles.menuCard}>
-            <MenuRow icon="bell-outline" label="Notifications" tint="#F59E0B" />
-            <View style={styles.menuDivider} />
-            <MenuRow
-              icon="shield-lock-outline"
-              label="Privacy"
-              tint="#3B82F6"
-            />
-            <View style={styles.menuDivider} />
-            <MenuRow
-              icon="help-circle-outline"
-              label="Help & support"
-              tint="#8B5CF6"
-            />
-          </View>
-
-          <Text style={styles.sectionTitle}>My posts</Text>
-          {posts.length === 0 ? (
-            <View style={styles.emptyWrap}>
-              <Icon
-                name="image-multiple-outline"
-                size={32}
-                color={colors.textSecondary}
-              />
-              <Text style={styles.empty}>You haven't posted yet.</Text>
-            </View>
-          ) : (
-            posts.map((post) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                onPress={() => navigation.navigate('PostDetail', { post })}
-                onComment={() => navigation.navigate('PostDetail', { post })}
-              />
-            ))
-          )}
-
+        <View style={styles.tabBar}>
           <TouchableOpacity
-            style={styles.logoutBtn}
-            onPress={handleLogout}
-            activeOpacity={0.85}
+            style={[styles.tabItem, activeTab === 'posts' && styles.activeTabItem]}
+            onPress={() => setActiveTab('posts')}
+            activeOpacity={0.8}
           >
-            <Icon name="logout" size={18} color={colors.danger} />
-            <Text style={styles.logoutText}>Log out</Text>
+            <Text style={[styles.tabLabel, activeTab === 'posts' && styles.activeTabLabel]}>
+              Posts
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tabItem, activeTab === 'saved' && styles.activeTabItem]}
+            onPress={() => setActiveTab('saved')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.tabLabel, activeTab === 'saved' && styles.activeTabLabel]}>
+              Saved
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tabItem, activeTab === 'about' && styles.activeTabItem]}
+            onPress={() => setActiveTab('about')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.tabLabel, activeTab === 'about' && styles.activeTabLabel]}>
+              About
+            </Text>
           </TouchableOpacity>
         </View>
+
+        <View style={styles.tabContentContainer}>{renderTabContent()}</View>
       </ScrollView>
     </View>
   );
@@ -337,19 +397,16 @@ const makeStyles = (colors) =>
     scroll: {
       paddingBottom: spacing.huge,
     },
-    hero: {
-      paddingBottom: spacing.huge + spacing.xl,
-      borderBottomLeftRadius: 36,
-      borderBottomRightRadius: 36,
-    },
-    heroSafe: {
-      paddingHorizontal: spacing.xl,
+    coverBanner: {
+      height: 140,
+      position: 'relative',
     },
     topBar: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingTop: spacing.sm,
+      paddingHorizontal: spacing.xl,
+      paddingTop: Platform.OS === 'ios' ? spacing.sm : spacing.lg,
     },
     topTitle: {
       fontSize: typography.size.xl,
@@ -361,226 +418,244 @@ const makeStyles = (colors) =>
       width: 38,
       height: 38,
       borderRadius: 19,
-      backgroundColor: 'rgba(255,255,255,0.2)',
-      borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.25)',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    heroBody: {
-      alignItems: 'center',
-      marginTop: spacing.xl,
-    },
-    avatarRing: {
-      width: 116,
-      height: 116,
-      borderRadius: 58,
       backgroundColor: 'rgba(255,255,255,0.15)',
-      alignItems: 'center',
-      justifyContent: 'center',
       borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.3)',
-    },
-    avatarInner: {
-      width: 104,
-      height: 104,
-      borderRadius: 52,
-      backgroundColor: 'rgba(255,255,255,0.25)',
+      borderColor: 'rgba(255,255,255,0.2)',
       alignItems: 'center',
       justifyContent: 'center',
-      borderWidth: 3,
-      borderColor: '#FFFFFF',
+    },
+    profileHeader: {
+      paddingHorizontal: spacing.xl,
+      marginTop: -45,
+      marginBottom: spacing.sm,
+    },
+    avatarRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-end',
+    },
+    avatarContainer: {
+      borderWidth: 4,
+      borderColor: colors.card,
+      borderRadius: 49,
+      backgroundColor: colors.card,
+      shadowColor: colors.shadow,
+      shadowOpacity: 0.15,
+      shadowOffset: { width: 0, height: 4 },
+      shadowRadius: 8,
+      elevation: 5,
+    },
+    editBtn: {
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      borderRadius: 20,
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.sm - 2,
+      backgroundColor: colors.card,
+    },
+    editBtnText: {
+      color: colors.textPrimary,
+      fontSize: typography.size.sm + 1,
+      fontWeight: typography.weight.bold,
     },
     name: {
-      marginTop: spacing.md,
-      fontSize: 24,
+      fontSize: 22,
       fontWeight: typography.weight.bold,
-      color: '#FFFFFF',
+      color: colors.textPrimary,
+      marginTop: spacing.md,
       letterSpacing: -0.3,
     },
-    locPill: {
+    metaRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      marginTop: spacing.sm,
+    },
+    metaItem: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: 'rgba(255,255,255,0.2)',
-      borderRadius: 999,
-      paddingHorizontal: spacing.md,
-      paddingVertical: 4,
-      marginTop: spacing.sm,
-      borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.25)',
+      marginRight: spacing.lg,
+      marginBottom: spacing.xs,
     },
-    locText: {
-      color: '#FFFFFF',
+    metaText: {
+      color: colors.textSecondary,
       fontSize: typography.size.sm,
       marginLeft: 4,
       fontWeight: typography.weight.medium,
     },
     bio: {
-      color: 'rgba(255,255,255,0.85)',
+      color: colors.textPrimary,
       fontSize: typography.size.md,
-      marginTop: spacing.md,
-      textAlign: 'center',
-      paddingHorizontal: spacing.lg,
       lineHeight: 20,
+      marginTop: spacing.sm,
     },
-    statsCardWrap: {
-      marginTop: -spacing.xl - spacing.lg,
-      paddingHorizontal: spacing.xl,
-    },
-    statsCard: {
+    statsRow: {
       flexDirection: 'row',
-      backgroundColor: colors.card,
-      borderRadius: 18,
-      paddingVertical: spacing.lg,
-      shadowColor: '#0E7A57',
-      shadowOpacity: 0.18,
-      shadowOffset: { width: 0, height: 8 },
-      shadowRadius: 18,
-      elevation: 6,
-    },
-    stat: {
-      flex: 1,
       alignItems: 'center',
+      paddingVertical: spacing.md,
+      borderTopWidth: 1,
+      borderBottomWidth: 1,
+      borderColor: colors.border,
+      marginTop: spacing.md,
     },
-    statDivider: {
-      width: 1,
-      backgroundColor: colors.border,
+    statItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginRight: spacing.xl,
     },
-    statValue: {
-      fontSize: 20,
+    statNumber: {
+      fontSize: typography.size.md,
       fontWeight: typography.weight.bold,
       color: colors.textPrimary,
-      letterSpacing: -0.3,
     },
     statLabel: {
       fontSize: typography.size.sm,
       color: colors.textSecondary,
-      marginTop: 2,
+      marginLeft: 4,
     },
-    body: {
-      paddingHorizontal: spacing.xl,
-      marginTop: spacing.xl,
-    },
-    editBtn: {
+    tabBar: {
       flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: spacing.md + 2,
-      borderRadius: 14,
-      shadowColor: '#1D9E75',
-      shadowOpacity: 0.3,
-      shadowOffset: { width: 0, height: 6 },
-      shadowRadius: 10,
-      elevation: 4,
+      borderBottomWidth: 1,
+      borderColor: colors.border,
+      marginTop: spacing.md,
     },
-    editText: {
-      color: '#FFFFFF',
+    tabItem: {
+      flex: 1,
+      alignItems: 'center',
+      paddingVertical: spacing.md,
+      borderBottomWidth: 2,
+      borderBottomColor: 'transparent',
+    },
+    activeTabItem: {
+      borderBottomColor: colors.primary,
+    },
+    tabLabel: {
       fontSize: typography.size.md,
+      fontWeight: typography.weight.medium,
+      color: colors.textSecondary,
+    },
+    activeTabLabel: {
+      color: colors.primary,
       fontWeight: typography.weight.bold,
-      marginLeft: spacing.sm,
+    },
+    tabContentContainer: {
+      paddingTop: spacing.sm,
     },
     grid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      justifyContent: 'space-between',
-      marginTop: spacing.lg,
+      paddingHorizontal: spacing.sm,
+      marginTop: spacing.xs,
     },
-    actionShadow: {
-      width: '48.5%',
-      marginBottom: spacing.md,
-      borderRadius: 18,
-      shadowColor: colors.shadow,
-      shadowOpacity: 0.12,
-      shadowOffset: { width: 0, height: 6 },
-      shadowRadius: 10,
-      elevation: 3,
+    gridItem: {
+      width: '33.33%',
+      aspectRatio: 1,
+      padding: 1,
+      position: 'relative',
     },
-    actionCard: {
-      borderRadius: 18,
-      padding: spacing.lg,
-      minHeight: 120,
-      justifyContent: 'space-between',
+    gridImage: {
+      width: '100%',
+      height: '100%',
+      borderRadius: 4,
+      backgroundColor: colors.border,
     },
-    actionIcon: {
-      width: 38,
-      height: 38,
-      borderRadius: 12,
-      backgroundColor: 'rgba(255,255,255,0.25)',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    actionValue: {
-      marginTop: spacing.md,
-      fontSize: 22,
-      fontWeight: typography.weight.bold,
-      color: '#FFFFFF',
-      letterSpacing: -0.3,
-    },
-    actionLabel: {
-      fontSize: typography.size.sm,
-      color: 'rgba(255,255,255,0.9)',
-      marginTop: 2,
-    },
-    sectionTitle: {
-      fontSize: typography.size.lg,
-      fontWeight: typography.weight.bold,
-      color: colors.textPrimary,
-      marginTop: spacing.xl,
-      marginBottom: spacing.md,
-    },
-    emptyWrap: {
-      alignItems: 'center',
-      paddingVertical: spacing.xl,
-    },
-    empty: {
-      fontSize: typography.size.sm,
-      color: colors.textSecondary,
-      marginTop: spacing.sm,
-    },
-    menuCard: {
+    gridTextContainer: {
+      width: '100%',
+      height: '100%',
+      borderRadius: 4,
       backgroundColor: colors.card,
-      borderRadius: 16,
-      marginTop: spacing.sm,
-      overflow: 'hidden',
-      shadowColor: colors.shadow,
-      shadowOpacity: 0.05,
-      shadowOffset: { width: 0, height: 2 },
-      shadowRadius: 8,
-      elevation: 2,
-    },
-    menuRow: {
-      flexDirection: 'row',
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: spacing.sm,
+      justifyContent: 'center',
       alignItems: 'center',
-      paddingHorizontal: spacing.lg,
-      paddingVertical: spacing.md + 2,
     },
-    menuIcon: {
-      width: 36,
-      height: 36,
+    gridText: {
+      fontSize: 10,
+      color: colors.textPrimary,
+      textAlign: 'center',
+      lineHeight: 14,
+      fontWeight: typography.weight.medium,
+    },
+    videoBadge: {
+      position: 'absolute',
+      top: 6,
+      right: 6,
+      backgroundColor: 'rgba(0,0,0,0.6)',
+      width: 20,
+      height: 20,
       borderRadius: 10,
       alignItems: 'center',
       justifyContent: 'center',
-      marginRight: spacing.md,
     },
-    menuLabel: {
+    emptyWrap: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: spacing.massive,
+      paddingHorizontal: spacing.xxl,
+    },
+    emptyIcon: {
+      opacity: 0.6,
+      marginBottom: spacing.sm,
+    },
+    empty: {
+      fontSize: typography.size.md,
+      fontWeight: typography.weight.bold,
+      color: colors.textPrimary,
+      marginTop: spacing.sm,
+      textAlign: 'center',
+    },
+    emptySub: {
+      fontSize: typography.size.sm,
+      color: colors.textSecondary,
+      marginTop: spacing.xs,
+      textAlign: 'center',
+    },
+    aboutContainer: {
+      paddingHorizontal: spacing.xl,
+      paddingTop: spacing.md,
+    },
+    aboutRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: spacing.lg,
+      borderBottomWidth: 1,
+      borderColor: colors.border,
+    },
+    aboutIconContainer: {
+      width: 40,
+      height: 40,
+      borderRadius: 10,
+      backgroundColor: colors.primaryLight,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: spacing.lg,
+    },
+    aboutContent: {
       flex: 1,
+    },
+    aboutLabel: {
+      fontSize: typography.size.xs,
+      color: colors.textSecondary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      fontWeight: typography.weight.bold,
+    },
+    aboutValue: {
       fontSize: typography.size.md,
       color: colors.textPrimary,
       fontWeight: typography.weight.medium,
-    },
-    menuDivider: {
-      height: 1,
-      backgroundColor: colors.border,
-      marginLeft: spacing.lg + 36 + spacing.md,
+      marginTop: 2,
     },
     logoutBtn: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      marginTop: spacing.lg,
+      marginTop: spacing.xxl,
       paddingVertical: spacing.md + 2,
       borderRadius: 14,
       backgroundColor: colors.logoutBackground,
+      marginBottom: spacing.xl,
     },
     logoutText: {
       fontSize: typography.size.md,
@@ -591,3 +666,4 @@ const makeStyles = (colors) =>
   });
 
 export default ProfileScreen;
+
