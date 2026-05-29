@@ -109,7 +109,7 @@ const ChatScreen = ({ navigation }) => {
                 />
                 <View style={styles.body}>
                   <View style={styles.topLine}>
-                    <Text style={styles.name} numberOfLines={1}>
+                    <Text style={[styles.name, unread > 0 && styles.nameUnread]} numberOfLines={1}>
                       {item.other?.full_name || 'User'}
                     </Text>
                     <Text style={styles.time}>{formatRelative(item.updatedAt)}</Text>
@@ -216,8 +216,11 @@ const makeStyles = (colors) =>
     name: {
       flex: 1,
       fontSize: typography.size.md,
-      fontWeight: typography.weight.bold,
+      fontWeight: typography.weight.medium,
       color: colors.textPrimary,
+    },
+    nameUnread: {
+      fontWeight: typography.weight.bold,
     },
     time: {
       fontSize: typography.size.xs,
